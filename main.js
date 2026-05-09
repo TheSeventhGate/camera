@@ -36,14 +36,43 @@ document.body.appendChild(renderer.domElement);
 *******************/
 
 // lines
-const myLineArray = [
+// scene
+//  ├── groupMyLines (HAS transform)
+//  │    ├── lineX
+//  │    ├── lineY
+//  │    └── lineZ
+//  └── cube
+const positiveX = [
+  new THREE.Vector3(0,0,0), // start
+  new THREE.Vector3(1,0,0)  // end
+];
+const positiveY = [
   new THREE.Vector3(0,0,0), // start
   new THREE.Vector3(0,1,0)  // end
 ]; 
-const myLine = new THREE.BufferGeometry().setFromPoints(myLineArray);
-const lineMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} ); 
-const line = new THREE.Line(myLine, lineMaterial);
-scene.add(line);
+const positiveZ = [
+  new THREE.Vector3(0,0,0), // start
+  new THREE.Vector3(0,0,1)  // end
+];  
+const worldX = new THREE.BufferGeometry().setFromPoints(positiveX);
+const worldY = new THREE.BufferGeometry().setFromPoints(positiveY);
+const worldZ = new THREE.BufferGeometry().setFromPoints(positiveZ);
+
+const lineMaterialX = new THREE.LineBasicMaterial({ color: 0xff0000 });
+const lineMaterialY = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+const lineMaterialZ = new THREE.LineBasicMaterial({ color: 0x0000ff });
+
+const lineX = new THREE.Line(worldX, lineMaterialX);
+const lineY = new THREE.Line(worldY, lineMaterialY);
+const lineZ = new THREE.Line(worldZ, lineMaterialZ);
+
+
+const groupMyLines = new THREE.Group();
+groupMyLines.add(lineX);
+groupMyLines.add(lineY);
+groupMyLines.add(lineZ);
+scene.add(groupMyLines);
+
 
 // shapes and wires
 // Object3D
@@ -57,8 +86,13 @@ const material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true}
 const cube = new THREE.Mesh( myCube, material ); // The object that combines the shape and appearance and inherits transform behavior from Object3D
 scene.add( cube );
 
-// camera
-camera.position.z = 10;
+/*******************
+**                ** 
+** CAMERA         **
+**                **
+*******************/
+camera.position.z = 5;
+
 
 /*******************
 **                ** 
@@ -67,6 +101,11 @@ camera.position.z = 10;
 *******************/
 function animate( time ) {
 
+  // lines
+  groupMyLines.rotation.x = time / 3000; // <-- test to see if "grouped"
+  groupMyLines.rotation.y = time / 1000; // <-- test to see if "grouped"
+
+  // shapes and wires
   cube.rotation.x = time / 2000;
   cube.rotation.y = time / 1000;
   renderer.render( scene, camera );
