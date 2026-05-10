@@ -35,8 +35,6 @@ function getGamepad() {
   return gamepads[0];
 }
 
-
-
 /*******************
 **                ** 
 ** SCENE OBJECTS  **
@@ -118,7 +116,7 @@ function animate( time ) {
 
   const gp = getGamepad();
 
-  console.log(gp);
+  //console.log(gp);
 
   cameraRig.update(gp); // returns NULL
 
