@@ -6,28 +6,36 @@
 **                **
 *******************/
 import * as THREE from './node_modules/three/build/three.module.js';
-
+import { Camera6DOF } from './Camera6DOF.js';
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, 1290 / 1080, 0.1, 1000  );
 
 // For consistant render math 1290 x 1080
 const RENDER_WIDTH = 1290;
 const RENDER_HEIGHT = 1080;
-
 const renderer = new THREE.WebGLRenderer();
 
 // render buffer is fixed size
 renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT, false);
-
 document.body.style.margin = "0";
 document.body.style.overflow = "auto";
-
 renderer.domElement.style.width = "1290px";
 renderer.domElement.style.height = "1080px";
 renderer.setPixelRatio(1); // Force rendering to use a 1:1 pixel scale so graphics math behaves consistently across different monitors and DPI settings
-
 document.body.style.margin = "0";
 document.body.appendChild(renderer.domElement);
+
+/*******************
+**                ** 
+** GAMEPAD        **
+**                **
+*******************/
+function getGamepad() {
+  const gamepads = navigator.getGamepads();
+  return gamepads[0];
+}
+
+
 
 /*******************
 **                ** 
@@ -80,19 +88,26 @@ scene.add(groupMyLines);
 //       ├── Geometry
 //       └── Material
 const myCube = new THREE.BoxGeometry( 1, 1, 1 );
-const myCone = new THREE.ConeGeometry(1, 2, 4);
+const myCone = new THREE.ConeGeometry(1, 2, 13);
 const mySphere = new THREE.SphereGeometry(1,13,13);
 const material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} ); // A mesh is an object that takes a geometry, and applies a material to it
-const cube = new THREE.Mesh( myCube, material ); // The object that combines the shape and appearance and inherits transform behavior from Object3D
-scene.add( cube );
+const myObject = new THREE.Mesh( myCone, material ); // The object that combines the shape and appearance and inherits transform behavior from Object3D
+//scene.add(myObject);
+
+
+// camera rig
+const cameraRig = new Camera6DOF(scene);
+
+
 
 /*******************
 **                ** 
 ** CAMERA         **
 **                **
 *******************/
+camera.position.x = 0;
+camera.position.y = 0;
 camera.position.z = 5;
-
 
 /*******************
 **                ** 
@@ -101,13 +116,13 @@ camera.position.z = 5;
 *******************/
 function animate( time ) {
 
-  // lines
-  groupMyLines.rotation.x = time / 3000; // <-- test to see if "grouped"
-  groupMyLines.rotation.y = time / 1000; // <-- test to see if "grouped"
+  const gp = getGamepad();
 
-  // shapes and wires
-  cube.rotation.x = time / 2000;
-  cube.rotation.y = time / 1000;
+  console.log(gp);
+
+  cameraRig.update(gp); // returns NULL
+
+
   renderer.render( scene, camera );
 
 }
@@ -121,3 +136,43 @@ renderer.setAnimationLoop(animate);
 *******************/
 // code here ....
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*******************
+**                ** 
+** NOTES          **
+**                **
+*******************/
+/*
+
+
+  // lines
+  //groupMyLines.rotation.x = time / 3000; // <-- test to see if "grouped"
+  //groupMyLines.rotation.y = time / 1000; // <-- test to see if "grouped"
+
+  // shapes and wires
+  //cube.rotation.x = time / 2000;
+  //cube.rotation.y = time / 1000;
+
+
+
+
+
+
+
+*/
