@@ -43,9 +43,7 @@ export class Camera6DOF
         // Acceleration
         const forwardVector = new THREE.Vector3(0,0,1);
         forwardVector.applyQuaternion(this.rotation);
-        this.position.add(
-            forwardVector.multiplyScalar(accelInput * 0.05)
-        );
+        this.position.add(forwardVector.multiplyScalar(accelInput * 0.05));
 
         // Strafe
 
@@ -62,7 +60,7 @@ export class Camera6DOF
 
         // Yaw (Global)
         const yawQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -yawInput * 0.05);
-        this.rotation.multiply(yawQuaternion);
+        this.rotation.premultiply(yawQuaternion);
 
         // Pitch (Local)
         const pitchQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -pitchInput * 0.05);
