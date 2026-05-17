@@ -33,6 +33,20 @@ export class Camera6DOF
         
     }
 
+    // Attach a camera to the rig
+    mountCamera(camera)
+    {
+        this.camera = camera;
+        this.origin.add(this.camera);
+        
+        // Reset local position
+        this.camera.position.set(0, 0, 0);
+        
+        // Rig forward is +Z (where the cone apex points).
+        // Camera default is -Z. Rotate 180 (PI) to align.
+        this.camera.rotation.set(0, 0, 0);
+    }
+
     // Translates method
     translate(gp)
     {

@@ -41,7 +41,7 @@ function getGamepad() {
 **                **
 *******************/
 
-// lines
+// axis lines
 // scene
 //  ├── groupMyLines (HAS transform)
 //  │    ├── lineX
@@ -72,13 +72,11 @@ const lineX = new THREE.Line(worldX, lineMaterialX);
 const lineY = new THREE.Line(worldY, lineMaterialY);
 const lineZ = new THREE.Line(worldZ, lineMaterialZ);
 
-
 const groupMyLines = new THREE.Group();
 groupMyLines.add(lineX);
 groupMyLines.add(lineY);
 groupMyLines.add(lineZ);
 scene.add(groupMyLines);
-
 
 // shapes and wires
 // Object3D
@@ -88,13 +86,38 @@ scene.add(groupMyLines);
 const myCube = new THREE.BoxGeometry( 1, 1, 1 );
 const myCone = new THREE.ConeGeometry(1, 2, 13);
 const mySphere = new THREE.SphereGeometry(1,13,13);
-const material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} ); // A mesh is an object that takes a geometry, and applies a material to it
-const myObject = new THREE.Mesh( myCone, material ); // The object that combines the shape and appearance and inherits transform behavior from Object3D
-//scene.add(myObject);
+const material = new THREE.MeshBasicMaterial({ // A mesh is an object that takes a geometry, and applies a material to it
+      color: 0x00ff00, wireframe: true
+}); 
+const myObject = new THREE.Mesh(myCone, material); // The object that combines the shape and appearance and inherits transform behavior from Object3D
+// scene.add(myObject);
+
+// world
+const testSurface = new THREE.PlaneGeometry(10,10);
+// const testSurfaceMat = new THREE.MeshStandardMaterial({ // requires a light source
+//       color: 0x808080,      // Gray as a hex value
+//       side: THREE.DoubleSide,
+//       roughness: 0.5,
+//       metalness: 0.5
+// });
+const testSurfaceMat = new THREE.MeshBasicMaterial({
+      color: 0x808080,      // Gray as a hex value
+      side: THREE.DoubleSide,
+});
+const testSurfaceObj = new THREE.Mesh(testSurface, testSurfaceMat);
+scene.add(testSurfaceObj);
+
+// Move the floor down and rotate 90 degrees to be flat
+testSurfaceObj.position.y = -2;
+testSurfaceObj.rotation.x = -Math.PI / 2;
+
+
+
 
 
 // camera rig
 const cameraRig = new Camera6DOF(scene);
+cameraRig.mountCamera(camera);
 
 
 
@@ -105,7 +128,6 @@ const cameraRig = new Camera6DOF(scene);
 *******************/
 camera.position.x = 0;
 camera.position.y = 0;
-camera.position.z = 5;
 
 /*******************
 **                ** 
