@@ -143,14 +143,9 @@ function animate( time ) {
 
 }
 
+// main game loop call
 renderer.setAnimationLoop(animate);
 
-/*******************
-**                ** 
-** LISTENERS      **
-**                **
-*******************/
-// code here ....
 
 
 
@@ -169,26 +164,4 @@ renderer.setAnimationLoop(animate);
 
 
 
-/*******************
-**                ** 
-** NOTES          **
-**                **
-*******************/
-/*
 
-
-  // lines
-  //groupMyLines.rotation.x = time / 3000; // <-- test to see if "grouped"
-  //groupMyLines.rotation.y = time / 1000; // <-- test to see if "grouped"
-
-  // shapes and wires
-  //cube.rotation.x = time / 2000;
-  //cube.rotation.y = time / 1000;
-
-
-
-
-
-
-
-*/
