@@ -93,7 +93,7 @@ const myObject = new THREE.Mesh(myCone, material); // The object that combines t
 // scene.add(myObject);
 
 // world
-const testSurface = new THREE.PlaneGeometry(10,10);
+const testSurface = new THREE.PlaneGeometry(100,100);
 // const testSurfaceMat = new THREE.MeshStandardMaterial({ // requires a light source
 //       color: 0x808080,      // Gray as a hex value
 //       side: THREE.DoubleSide,
@@ -122,8 +122,8 @@ cameraRig.mountCamera(camera);
 ** CAMERA         **
 **                **
 *******************/
-camera.position.x = 0;
-camera.position.y = 0;
+// camera.position.x = 0;
+// camera.position.y = 0;
 
 /*******************
 **                ** 

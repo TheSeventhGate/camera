@@ -23,15 +23,23 @@ export class Camera6DOF
         this.rotation = new THREE.Quaternion();
 
         // visual model in relation to root above (can be considered local space)
-        this.shape = new THREE.ConeGeometry(1,2,13);
-        this.mat   = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true});
+        // all edges and lines and mat below is for debug only
+        this.shape = new THREE.BoxGeometry( 1, 1, 1 );
+        this.shapeEdges = new THREE.EdgesGeometry(this.shape);
+        this.shapeLines = new THREE.LineSegments(this.shapeEdges);
+        this.mat   = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: false, transparent: true, opacity: 0.5});
         this.mesh  = new THREE.Mesh(this.shape, this.mat);
- 
+
+
+
+
         // offset of visual model (mesh != origin)
         this.mesh.rotation.x = Math.PI / 2;
 
         // attach the mesh as a child of the origin
         this.origin.add(this.mesh);
+        this.origin.add(this.shapeLines)
+
 
         // inputs... controller || mouse keyboard
         this.strafeInpt = 0;
@@ -52,8 +60,8 @@ export class Camera6DOF
         this.upAxis          = new THREE.Vector3(0, 1, 0); // y
         this.fwrdAxis        = new THREE.Vector3(0, 0, 1); // z
         this.pitchQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -this.pitchInput * 0.05); // x
-        this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -this.yawInput * 0.05);   // y
-        this.rollQuaternion  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),  this.rollDelta * 0.05);  // z
+        this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -this.yawInput   * 0.05); // y
+        this.rollQuaternion  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),  this.rollDelta  * 0.05); // z
         
     }
 
@@ -69,7 +77,7 @@ export class Camera6DOF
         this.origin.add(this.camera);
         
         // reset local position
-        this.camera.position.set(0, 0, 10);
+        this.camera.position.set(0, 1, 5);
         
         // rig forward is +Z (where the cone apex points).
         // camera default is -Z. Rotate 180 (PI) to align.
@@ -95,8 +103,6 @@ export class Camera6DOF
         // buttons
         this.leftBumper = gp.buttons[4];
         this.rghtBumper = gp.buttons[5];
-
-
 
     }
 
@@ -125,7 +131,6 @@ export class Camera6DOF
         this.strafeVector.set(1,0,0);
         this.strafeVector.applyQuaternion(this.rotation);
         this.position.add(this.strafeVector.multiplyScalar(this.strafeInpt * 0.05));
-
 
     }
 
@@ -177,7 +182,6 @@ export class Camera6DOF
             this.rollQuaternion.setFromAxisAngle(this.fwrdAxis, this.rollDelta * 0.05);
             this.rotation.multiply(this.rollQuaternion);
         }
-
 
     }
 
