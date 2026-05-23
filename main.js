@@ -8,11 +8,11 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { Camera6DOF } from './Camera6DOF.js';
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, 1290 / 1080, 0.1, 1000  );
 
-// For consistant render math 1290 x 1080
+// for consistant render math 1290 x 1080
 const RENDER_WIDTH = 1290;
 const RENDER_HEIGHT = 1080;
+const camera = new THREE.PerspectiveCamera( 50, RENDER_WIDTH / RENDER_HEIGHT, 0.1, 1000  );
 const renderer = new THREE.WebGLRenderer();
 
 // render buffer is fixed size
@@ -107,13 +107,9 @@ const testSurfaceMat = new THREE.MeshBasicMaterial({
 const testSurfaceObj = new THREE.Mesh(testSurface, testSurfaceMat);
 scene.add(testSurfaceObj);
 
-// Move the floor down and rotate 90 degrees to be flat
+// move the floor down and rotate 90 degrees to be flat
 testSurfaceObj.position.y = -2;
 testSurfaceObj.rotation.x = -Math.PI / 2;
-
-
-
-
 
 // camera rig
 const cameraRig = new Camera6DOF(scene);
@@ -122,7 +118,7 @@ cameraRig.mountCamera(camera);
 
 
 /*******************
-**                ** 
+**                **
 ** CAMERA         **
 **                **
 *******************/
