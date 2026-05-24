@@ -26,6 +26,15 @@ document.body.style.margin = "0";
 document.body.appendChild(renderer.domElement);
 
 /*******************
+**                **
+** TIME           **
+**                **
+*******************/
+let lastTime = 0;
+let deltaTime = 0;
+
+
+/*******************
 **                ** 
 ** GAMEPAD        **
 **                **
@@ -111,19 +120,14 @@ scene.add(testSurfaceObj);
 testSurfaceObj.position.y = -2;
 testSurfaceObj.rotation.x = -Math.PI / 2;
 
-// camera rig
-const cameraRig = new Camera6DOF(scene);
-cameraRig.mountCamera(camera);
-
-
-
 /*******************
 **                **
 ** CAMERA         **
 **                **
 *******************/
-// camera.position.x = 0;
-// camera.position.y = 0;
+// slaved to 6dof obj --> ALL objects in javascript are passed by reference
+const cameraRig = new Camera6DOF(scene); // 6dof custom class
+cameraRig.mountCamera(camera);
 
 /*******************
 **                ** 
@@ -132,12 +136,16 @@ cameraRig.mountCamera(camera);
 *******************/
 function animate( time ) {
 
+  // timing... "time" is provided by THREE.js + Canvas's "requestAnimationFrame"
+  if (lastTime > 0) {
+    deltaTime = (time - lastTime) / 1000; // time in milli since last frame
+  }
+  lastTime = time;
+  const dt = Math.min(deltaTime, 0.1); // The browser is sensitive to postion and size change, this gaurds against the pause
+  
   const gp = getGamepad();
 
-  //console.log(gp);
-
-  cameraRig.update(gp); // returns NULL
-
+  cameraRig.update(gp, dt); // returns NULL
 
   renderer.render( scene, camera );
 
