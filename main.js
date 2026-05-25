@@ -5,9 +5,14 @@
 ** INITILIZATIONS **
 **                **
 *******************/
-import * as THREE from './node_modules/three/build/three.module.js';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { Camera6DOF } from './Camera6DOF.js';
 const scene = new THREE.Scene();
+
+// Basic Lighting (Required to see non-wireframe objects)
+const light = new THREE.AmbientLight( 0xffffff, 1.0 ); 
+scene.add( light );
 
 // for consistant render math 1290 x 1080
 const RENDER_WIDTH = 1290;

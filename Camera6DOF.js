@@ -1,7 +1,8 @@
 // this file: "Camera6DOF.js"
 // import { Quaternion } from 'three/src/Three.Core.js';
 
-import * as THREE from './node_modules/three/build/three.module.js';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 export class Camera6DOF 
 {
@@ -26,9 +27,10 @@ export class Camera6DOF
         this.rotation = new THREE.Quaternion();
 
         // camera
-        this.timeElapsed  = 0.0;
-        this.bobFrequency = 0.1;  
-        this.bobAmplitude = 0.2;
+        this.timeElapsed   = 0.0;
+        this.bobFrequency  = 1.2;  
+        this.bobAmplitude  = 0.2;
+        this.cameraBasePos = 0.0;
 
         // visual model in relation to root above (can be considered local space)
         // all edges and lines and mat below is for debug only
@@ -44,6 +46,17 @@ export class Camera6DOF
         // attach the mesh as a child of the origin
         this.origin.add(this.mesh);
         this.origin.add(this.shapeLines)
+
+        // loading .obj from blender
+        const loader = new OBJLoader();
+        loader.load('../assets/sgs_01.obj', (obj) => {
+            this.shipModel = obj;
+            this.origin.add(this.shipModel);
+            
+            // hide debug box once ship is loaded
+            this.mesh.visible = false;
+            this.shapeLines.visible = false;
+        });
 
         // inputs controller + mouse keyboard
         this.strafeInpt = 0.0;
@@ -96,17 +109,26 @@ export class Camera6DOF
     *******************/
     mountCamera(camera)
     {
-        // camm obj is child of origin
-        this.camera = camera; // <-- here i create a new pointer to the referenced camera, now i can modify game cam
-        this.origin.add(this.camera);
-        
-        // reset local position
-        this.camera.position.set(0, 1, 5);
-        
-        // rig forward is +Z (where the cone apex points).
-        // camera default is -Z. Rotate 180 (PI) to align.
-        this.camera.rotation.set(0, 0, 0);
+        this.camera = camera;
+        // DO NOT add to origin. Add to scene instead.
+        // scene.add(this.camera); // Usually already in scene from main.js
+
+        // Create a "Mount Point" that IS welded to the ship
+        this.camMount = new THREE.Object3D();
+        this.camMount.position.set(0, 6, 13.0);
+        this.origin.add(this.camMount);
+
+        // A point 1 unit directly "above" the ship center
+        this.camUpMount = new THREE.Object3D();
+        this.camUpMount.position.set(0, 1, 0); 
+        this.origin.add(this.camUpMount);
+
+        // Create a "LookAt Point" that IS welded to the ship
+        this.camTarget = new THREE.Object3D();
+        this.camTarget.position.set(0, 0, -32.0);
+        this.origin.add(this.camTarget);
     }
+
 
     /*******************
     **                **
@@ -144,7 +166,7 @@ export class Camera6DOF
         **  Accel **
         **        **
         ***********/
-        this.thrust = THREE.MathUtils.clamp(this.thrust, -10.0, 1.0); // "-" = forward
+        this.thrust = THREE.MathUtils.clamp(this.thrust, -15.0, 3.0); // "-" = forward
         if (Math.abs(this.accelInput) > this.deadZone)
         {
             this.thrust += this.accelInput * this.accelSpeed * this.dt;
@@ -282,28 +304,51 @@ export class Camera6DOF
     update(gp, dt) // gp = gamepad ... dt = deltatime
     {
 
-        // time
         this.dt = dt;
 
-        // camera sinusoidal bob
+        //  increment time at the very start so the math changes
         this.timeElapsed += dt;
+
+        // bob to the Mount (which is a child of the ship)
         const bobOffset = Math.sin(this.timeElapsed * this.bobFrequency) * this.bobAmplitude;
+        const driftOffset = Math.cos(this.timeElapsed * 0.05) * 0.01;
+
+        // use the local offsets (0 for X, 6 for Y)
+        this.camMount.position.x = 0 + driftOffset;
+        this.camMount.position.y = 6 + bobOffset;
+
+        // chase (World Space)
+        const goalPosition = new THREE.Vector3();
+        this.camMount.getWorldPosition(goalPosition);
+
+        const goalLookAt = new THREE.Vector3();
+        this.camTarget.getWorldPosition(goalLookAt);
+
+        const shipUp = new THREE.Vector3();
+        this.camUpMount.getWorldPosition(shipUp);
+        const upDirection = shipUp.sub(this.origin.position).normalize();
+
+        // lerp the camera towards the bobbing goal
         if (this.camera) 
         {
-            this.camera.position.y = 1.0 + bobOffset; // y axis bob
-            // a tiny bit of horizontal "drift" using Math.cos
-            const driftOffset = Math.cos(this.timeElapsed * 0.4) * 0.01;
-            this.camera.position.x = driftOffset;
+            // calc how far away the camera is from its ideal spot
+            const distance = this.camera.position.distanceTo(goalPosition);
+
+            // create a dynamic tightness: 
+            // if distance is small, use 0.05 (lazy). 
+            // if distance is huge, use 1.0 (hard-locked snap).
+            const tightness = THREE.MathUtils.clamp(distance * 0.1, 0.01, 1.0);
+
+            this.camera.position.lerp(goalPosition, tightness); 
+
+            this.camera.up.copy(upDirection); 
+            this.camera.lookAt(goalLookAt);
         }
 
-
-
-        // functions to be called every tick
+        // call members and apply
         this.processInputs(gp);
         this.translate(); 
         this.rotate();
-
-        // all real transforms are applied here and are only applied to "origin" not "mesh"
         this.origin.position.copy(this.position);
         this.origin.quaternion.copy(this.rotation);
         
