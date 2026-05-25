@@ -114,11 +114,16 @@ const testSurfaceMat = new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
 });
 const testSurfaceObj = new THREE.Mesh(testSurface, testSurfaceMat);
-scene.add(testSurfaceObj);
+// scene.add(testSurfaceObj);
 
 // move the floor down and rotate 90 degrees to be flat
 testSurfaceObj.position.y = -2;
 testSurfaceObj.rotation.x = -Math.PI / 2;
+
+// test grid
+const theGrid = new THREE.GridHelper(100, 50, 0x40ecf0, 0x40ecf0);
+scene.add(theGrid);
+theGrid.position.y = -2;
 
 /*******************
 **                **

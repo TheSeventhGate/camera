@@ -30,7 +30,7 @@ export class Camera6DOF
         this.shape = new THREE.BoxGeometry( 1, 1, 1 );
         this.shapeEdges = new THREE.EdgesGeometry(this.shape);
         this.shapeLines = new THREE.LineSegments(this.shapeEdges);
-        this.mat   = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: false, transparent: true, opacity: 0.5});
+        this.mat   = new THREE.MeshBasicMaterial({color: 0Xdb341f, wireframe: false, transparent: true, opacity: 0.5});
         this.mesh  = new THREE.Mesh(this.shape, this.mat);
 
         // offset from visual model (mesh != origin)
@@ -64,10 +64,10 @@ export class Camera6DOF
         this.rollQuaternion  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),  this.rollDelta  * 0.05); // z
         
         // velocities + thrusts + speeds
-        this.accelSpeed    = 3.0;     // z ... translate ... -z forward
-        this.strafeSpeed   = 2.0;      // x ... translate
+        this.accelSpeed    = 4.0;      // z ... translate ... -z forward
+        this.strafeSpeed   = 3.0;      // x ... translate
         this.pitchSpeed    = 0.8;      // x ... rotate
-        this.yawSpeed      = 1.0;      // y ... rotate
+        this.yawSpeed      = 2.0;      // y ... rotate
         this.rollSpeed     = 0.4;      // z ... rotate
         this.thrust        = 0.0;     
         this.strafeThrust  = 0.0;
@@ -139,7 +139,7 @@ export class Camera6DOF
         **  Accel **
         **        **
         ***********/
-        this.thrust = THREE.MathUtils.clamp(this.thrust, -3.0, 1.0); // "-" = forward
+        this.thrust = THREE.MathUtils.clamp(this.thrust, -10.0, 1.0); // "-" = forward
         if (Math.abs(this.accelInput) > this.deadZone)
         {
             this.thrust += this.accelInput * this.accelSpeed * this.dt;
@@ -164,7 +164,7 @@ export class Camera6DOF
         ** Strafe **
         **        **
         ***********/
-        this.strafeThrust = THREE.MathUtils.clamp(this.strafeThrust, -1.0, 1.0);
+        this.strafeThrust = THREE.MathUtils.clamp(this.strafeThrust, -2.0, 2.0);
         if (Math.abs(this.strafeInpt) > this.deadZone)
         {
             this.strafeThrust += this.strafeInpt * this.strafeSpeed * this.dt;
@@ -199,7 +199,7 @@ export class Camera6DOF
         **  YAW   **
         **        **
         ***********/
-        this.yawVelocity = THREE.MathUtils.clamp(this.yawVelocity, -1.0, 1.0);
+        this.yawVelocity = THREE.MathUtils.clamp(this.yawVelocity, -100.0, 100.0);
         if (Math.abs(this.yawInput) > this.deadZone)
         {
             this.yawVelocity += this.yawInput * this.yawSpeed * this.dt;
