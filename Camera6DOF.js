@@ -25,6 +25,11 @@ export class Camera6DOF
         this.position = new THREE.Vector3();
         this.rotation = new THREE.Quaternion();
 
+        // camera
+        this.timeElapsed  = 0.0;
+        this.bobFrequency = 0.1;  
+        this.bobAmplitude = 0.2;
+
         // visual model in relation to root above (can be considered local space)
         // all edges and lines and mat below is for debug only
         this.shape = new THREE.BoxGeometry( 1, 1, 1 );
@@ -64,11 +69,11 @@ export class Camera6DOF
         this.rollQuaternion  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),  this.rollDelta  * 0.05); // z
         
         // velocities + thrusts + speeds
-        this.accelSpeed    = 4.0;      // z ... translate ... -z forward
+        this.accelSpeed    = 6.0;      // z ... translate ... -z forward
         this.strafeSpeed   = 3.0;      // x ... translate
         this.pitchSpeed    = 0.8;      // x ... rotate
         this.yawSpeed      = 2.0;      // y ... rotate
-        this.rollSpeed     = 0.4;      // z ... rotate
+        this.rollSpeed     = 1.8;      // z ... rotate
         this.thrust        = 0.0;     
         this.strafeThrust  = 0.0;
         this.yawVelocity   = 0.0;
@@ -206,7 +211,7 @@ export class Camera6DOF
         }
         else
         {
-            this.yawVelocity *= 0.99;
+            this.yawVelocity *= 0.98;
             if (Math.abs(this.yawVelocity) < 0.02)
             {
                 this.yawVelocity = 0;
@@ -245,7 +250,7 @@ export class Camera6DOF
         **  ROLL  **
         **        **
         ***********/
-        this.rollVelocity = THREE.MathUtils.clamp(this.rollVelocity, -1.0, 1.0);
+        this.rollVelocity = THREE.MathUtils.clamp(this.rollVelocity, -5.0, 5.0);
    
         // calculate Roll Acceleration
         if (this.leftBumper.pressed) 
@@ -279,6 +284,19 @@ export class Camera6DOF
 
         // time
         this.dt = dt;
+
+        // camera sinusoidal bob
+        this.timeElapsed += dt;
+        const bobOffset = Math.sin(this.timeElapsed * this.bobFrequency) * this.bobAmplitude;
+        if (this.camera) 
+        {
+            this.camera.position.y = 1.0 + bobOffset; // y axis bob
+            // a tiny bit of horizontal "drift" using Math.cos
+            const driftOffset = Math.cos(this.timeElapsed * 0.4) * 0.01;
+            this.camera.position.x = driftOffset;
+        }
+
+
 
         // functions to be called every tick
         this.processInputs(gp);
