@@ -3,6 +3,68 @@
 
 import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// GAME START: [X][Y][-Z] ... -z is "forward" 
+//                                [Y]              [-Z] 
+//                                **              **
+//                                **            **
+//                                **          **
+//                                **        **
+//                                **      **
+//                                **    **
+//                                **  **
+//                                ****
+//      ******************************************************[X]
+//                              ****
+//                            **  **
+//                          **    **
+//                        **      **
+//                      **        **
+//                    **          **
+//                  **            **
+//                **              **
+////////////////////////////////////////////////////////////////////////////////////
+// OPENGL 4X4 IDENTITY MATRIX
+// | 1  0  0  0 |  ->  | m0 m4 m8  m12 |   // m0, m1, m2: First column, representing the x-axis direction vector.
+// | 0  1  0  0 |  ->  | m1 m5 m9  m13 |   // m4, m5, m6: Second column, representing the y-axis direction vector.
+// | 0  0  1  0 |  ->  | m2 m6 m10 m14 |   // m8, m9, m10: Third column, representing the z-axis direction vector.
+// | 0  0  0  1 |  ->  | m3 m7 m11 m15 |   // m12, m13, m14: Translation components along the x, y, and z axes, respectively.
+////////////////////////////////////////////////////////////////////////////////////
+// OPENGL + RAYLIB "MATRIX" STRUCT
+// | 1  0  0  10 |  ->  | m0  m4  m8  m12 |    // [12] = x-axis translation
+// | 0  1  0  0  |  ->  | m1  m5  m9  m13 |    // [13] = y-axis translation
+// | 0  0  1  0  |  ->  | m2  m6  m10 m14 |    // [14] = z-axis translation
+// | 0  0  0  1  |  ->  | m3  m7  m11 m15 |    // [15] = always 1, required for matrix multiplication
+////////////////////////////////////////////////////////////////////////////////////
+// AXIS IN RELATION TO RAYLIB DEFAULT CAMERA POSITION
+// [13][Y] = (+)up     (-)down
+// [12][X] = (+)right  (-)left
+// [14][Z] = (-)forward (+)back
+////////////////////////////////////////////////////////////////////////////////////
+// THREE.JS Matrix4 ELEMENT STORAGE (COLUMN MAJOR - SAME AS OPENGL)
+// | 1  0  0  10 |  ->  | e0  e4  e8  e12 |
+// | 0  1  0  0  |  ->  | e1  e5  e9  e13 |
+// | 0  0  1  0  |  ->  | e2  e6  e10 e14 |
+// | 0  0  0  1  |  ->  | e3  e7  e11 e15 |
+//
+// matrix.elements[12] = x position
+// matrix.elements[13] = y position
+// matrix.elements[14] = z position
+//
+// const e = mesh.matrix.elements;
+// console.log(e[12], e[13], e[14]); // x, y, z world position
+////////////////////////////////////////////////////////////////////////////////////
+// THREE.JS WORLD AXIS CONVENTION
+// Y+ = up
+// X+ = right
+// Z+ = toward camera / backward
+// Z- = forward into the screen
+//
+// SAME HANDEDNESS + FORWARD DIRECTION AS OPENGL
+// THREE.JS IS RIGHT-HANDED BY DEFAULT
+////////////////////////////////////////////////////////////////////////////////////
+
 
 export class Camera6DOF 
 {
@@ -14,6 +76,14 @@ export class Camera6DOF
     *******************/
     constructor(scene)
     {
+
+        // WORLD
+        //   └── origin
+        //         ├── mesh
+        //         ├── shipModel
+        //         ├── camMount
+        //         ├── camTarget
+        //         └── camUpMount
 
         // timing
         this.dt = 0.0;
@@ -47,16 +117,145 @@ export class Camera6DOF
         this.origin.add(this.mesh);
         this.origin.add(this.shapeLines)
 
-        // loading .obj from blender
-        const loader = new OBJLoader();
-        loader.load('../assets/sgs_01.obj', (obj) => {
-            this.shipModel = obj;
-            this.origin.add(this.shipModel);
-            
-            // hide debug box once ship is loaded
+        /***********
+        **        **
+        ** Model  **
+        **        **
+        ***********//*
+        Workflow:
+        |
+        |
+        |--> (TEXTURE) Build "Material" 
+        |    This sends the PNG to the GPU memory immediately
+        |    1) const albedoTex = textureLoader.load('../assets/sgs_01_texture.png');
+        |    2) const normalTex = textureLoader.load('../assets/sgs_01_normals.png');
+        |    3) const metalTex  = textureLoader.load('../assets/sgs_01_metal.png');
+        |    4) const roughTex  = textureLoader.load('../assets/sgs_01_roughness.png');
+        |
+        |
+        |--> (MESH) Second load "obj" with OBJLoader 
+        |     This will default to gray if no "Material" is loaded
+        |     1) const loader = new OBJLoader();
+        |        loader.load('../assets/sgs_01.obj', (obj) => { this.shipModel = obj; this.origin.add(this.shipModel);}
+        |
+        |
+        |--> (MESH + TEXTURE) Combine material and obj
+        |     1) force model obj to use PBR material
+        |
+        |        loader.load('../assets/sgs_01.obj', (obj) => {
+        |        // The "Traverse" logic:
+        |        // OBJs are 'Groups'. We visit every 'Mesh' inside that group.
+        |            obj.traverse((child) => {
+        |                if (child.isMesh) {
+        |                    // Overwrite the gray Blender material with our PBR skin
+        |                    child.material = shipMaterial;
+        |                }
+        |            });
+        |
+        |            this.shipModel = obj;
+        |            this.origin.add(this.shipModel);
+        |
+        |            this.mesh.visible = false; // Hide debug box
+        |            this.shapeLines.visible = false;
+        |        });
+        
+        In short: 
+        * The Mesh is the solid thing I can "touch" (the 3D shape). 
+        * The Texture is the colorful picture I "wrap" around it to make it look real.
+        * The .obj file IS the Mesh. It’s just a long list of coordinates (X, Y, Z) that tell the computer where all the corners and edges of your ship are.
+        * The .png file IS the Texture. It’s the 2D image that gets "shrink-wrapped" onto that shape.
+
+        Implementation Logic:
+        1. The Traverse Requirement: I'm using .traverse() because the OBJLoader returns a THREE.Group (a container) rather than a single mesh. Since a group doesn't have a material property, I have to iterate through the model’s
+            hierarchy and manually inject my material into every individual Mesh child found inside.
+        2. Metalness Multiplier (1.0): I’m setting the metalness property to 1.0 to act as a full-strength multiplier for my metalness map. If I leave this at the default (0.0), the shader will multiply the map’s values by zero,
+            making the ship look like flat plastic regardless of the texture. Setting it to 1.0 tells the GPU to follow the map's data exactly.
+        3. Lighting Requirements: Currently, main.js only uses an AmbientLight. For this PBR workflow—specifically the normal maps—to work, I’ll need to add a DirectionalLight or a PointLight. Without a light source that has a
+            specific direction, the surface bumps won't cast micro-shadows, and the ship will look flat despite having high-res textures.
+
+        Asset Manifest (Required in /assets):
+        * sgs_01_texture.png: Albedo/Diffuse (The raw paint and base colors).
+        * sgs_01_normals.png: Normal Map (The surface detail like bolts and panel lines).
+        * sgs_01_metal.png: Metalness Map (Defining what parts are raw metal vs. paint).
+        * sgs_01_roughness.png: Roughness Map (Defining what parts are shiny vs. matte).
+
+        */
+
+        /***********
+        **        **
+        **Texture ** // <--- if using ".obj" file from blender (my first attempts)
+        **Material**
+        **        **
+        ***********/
+        // const textureLoader = new THREE.TextureLoader();
+        // const albedoTex = textureLoader.load('../assets/sgs_01_texture.png');
+        // const normalTex = textureLoader.load('../assets/sgs_01_normals.png');
+        // const metalTex  = textureLoader.load('../assets/sgs_01_metal.png');
+        // const roughTex  = textureLoader.load('../assets/sgs_01_roughness.png');
+        // albedoTex.colorSpace = THREE.SRGBColorSpace;
+        // // build true PBR material
+        // const shipMaterial = new THREE.MeshStandardMaterial({
+        //     map: albedoTex,
+        //     normalMap: normalTex,
+        //     metalnessMap: metalTex,
+        //     roughnessMap: roughTex,
+        //     metalness: 1.0,
+        //     roughness: 0.5
+        // });
+
+
+        /***********
+        **        **
+        **Model   ** // <--- if using ".obj" file from blender (my first attempts)
+        **Mesh    **
+        **        **
+        ***********/
+        // const loader = new OBJLoader();
+        // loader.load('../assets/sgs_01.obj', (obj) => {
+        //     obj.traverse((child) => {
+        //         if (child.isMesh) {
+        //             child.material = shipMaterial;
+
+        //             // optional but VERY important for lighting quality
+        //             child.castShadow = true;
+        //             child.receiveShadow = true;
+        //         }
+        //     });
+
+
+        //     this.shipModel = obj;
+        //     this.origin.add(this.shipModel);
+
+        //     this.mesh.visible = false;
+        //     this.shapeLines.visible = false;
+        // });
+
+
+        /************************
+        **                     **
+        ** Texture   +   Model ** 
+        ** Material      Mesh  **
+        **                     **
+        ************************/
+        const loader = new GLTFLoader();
+
+        loader.load('../assets/sgs_01.glb', (gltf) => {
+            const model = gltf.scene;
+
+            this.shipModel = model;
+            this.origin.add(model);
+
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
             this.mesh.visible = false;
             this.shapeLines.visible = false;
         });
+
 
         // inputs controller + mouse keyboard
         this.strafeInpt = 0.0;
@@ -293,6 +492,7 @@ export class Camera6DOF
         // apply Roll (The finalized velocity)
         this.rollQuaternion.setFromAxisAngle(this.fwrdAxis, this.rollVelocity * this.dt);
         this.rotation.multiply(this.rollQuaternion);
+        this.rotation.normalize();
 
     }
 
@@ -301,6 +501,25 @@ export class Camera6DOF
     ** DRAW           **
     **                **
     *******************/
+    /*
+        THRUSTER MAP:
+            |[01]|[02]|[03]|[04]|[05]|[06]|[07]|[08]|[09]|[10]|[11]|[12]|[13]|[14]|[15]|[16]|[17]|[18]|[19]|
+        ----------------------------------------------------------------------------------------------------
+        [A] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
+        ----------------------------------------------------------------------------------------------------
+        [B] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
+        ----------------------------------------------------------------------------------------------------
+        [C] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
+        ----------------------------------------------------------------------------------------------------
+        [D] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
+        ----------------------------------------------------------------------------------------------------
+        [E] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
+        ----------------------------------------------------------------------------------------------------
+        [F] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
+        ----------------------------------------------------------------------------------------------------
+        + = MINOR THRUSTER
+        $ = MAJOR THRUSTER
+    */
     update(gp, dt) // gp = gamepad ... dt = deltatime
     {
 

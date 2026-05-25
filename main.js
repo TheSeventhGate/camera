@@ -139,6 +139,17 @@ theGrid.position.y = -2;
 const cameraRig = new Camera6DOF(scene); // 6dof custom class
 cameraRig.mountCamera(camera);
 
+
+/*******************
+**                **
+** LIGHT          **
+**                **
+*******************/
+const sunLight = new THREE.DirectionalLight(0xffffff, 3.0); // Bright white light
+sunLight.position.set(0, 10, 7.5); // Coming from above and to the side
+scene.add(sunLight);
+
+
 /*******************
 **                ** 
 ** GAME LOOP      **
