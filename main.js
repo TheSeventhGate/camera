@@ -11,8 +11,8 @@ import { Camera6DOF } from './Camera6DOF.js';
 const scene = new THREE.Scene();
 
 // Basic Lighting (Required to see non-wireframe objects)
-const light = new THREE.AmbientLight( 0xffffff, 1.0 ); 
-scene.add( light );
+// const light = new THREE.AmbientLight( 0xffffff, 1.0 ); 
+// scene.add( light );
 
 // for consistant render math 1290 x 1080
 const RENDER_WIDTH = 1290;
@@ -142,12 +142,36 @@ cameraRig.mountCamera(camera);
 
 /*******************
 **                **
-** LIGHT          **
+** LIGHTS         **
 **                **
 *******************/
-const sunLight = new THREE.DirectionalLight(0xffffff, 3.0); // Bright white light
-sunLight.position.set(0, 10, 7.5); // Coming from above and to the side
+// Space lights / general lighting
+const sunLight = new THREE.PointLight(0xffffff, 500.0); // Bright white light
+sunLight.position.set(0, 200, 0); // Coming from above and to the side
 scene.add(sunLight);
+const sunGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Bright Yellow
+const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+sunMesh.position.copy(sunLight.position);
+scene.add(sunMesh);
+
+// Ship specific lighting
+// -10 z seems to be about right bove center fusalage
+const shipLight_01 = new THREE.DirectionalLight(0xffffff, 5.0); // Bright white light
+shipLight_01.position.set(0, 30, -10); // Coming from above and to the side
+scene.add(shipLight_01);
+
+const shipLight_02 = new THREE.DirectionalLight(0xffffff, 5.0); // Bright white light
+shipLight_02.position.set(-20, -30, 10); // Coming from above and to the side
+scene.add(shipLight_02);
+
+const shipLight_03 = new THREE.DirectionalLight(0xffffff, 5.0); // Bright white light
+shipLight_03.position.set(20, 30, 10); // Coming from above and to the side
+scene.add(shipLight_03);
+
+
+// const sunLight = new THREE.DirectionalLight(0xffffff, 100.0); // Bright white light
+
 
 
 /*******************

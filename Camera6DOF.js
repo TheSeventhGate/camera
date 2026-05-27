@@ -111,7 +111,7 @@ export class Camera6DOF
         this.mesh  = new THREE.Mesh(this.shape, this.mat);
 
         // offset from visual model (mesh != origin)
-        this.mesh.rotation.x = Math.PI / 2;
+        // REMOVED: this.mesh.rotation.x = Math.PI / 2; 
 
         // attach the mesh as a child of the origin
         this.origin.add(this.mesh);
@@ -183,26 +183,22 @@ export class Camera6DOF
 
         /***********
         **        **
-        **Texture ** // <--- if using ".obj" file from blender (my first attempts)
+        **Texture **
         **Material**
         **        **
         ***********/
-        // const textureLoader = new THREE.TextureLoader();
-        // const albedoTex = textureLoader.load('../assets/sgs_01_texture.png');
-        // const normalTex = textureLoader.load('../assets/sgs_01_normals.png');
-        // const metalTex  = textureLoader.load('../assets/sgs_01_metal.png');
-        // const roughTex  = textureLoader.load('../assets/sgs_01_roughness.png');
-        // albedoTex.colorSpace = THREE.SRGBColorSpace;
-        // // build true PBR material
-        // const shipMaterial = new THREE.MeshStandardMaterial({
-        //     map: albedoTex,
-        //     normalMap: normalTex,
-        //     metalnessMap: metalTex,
-        //     roughnessMap: roughTex,
-        //     metalness: 1.0,
-        //     roughness: 0.5
-        // });
+        const textureLoader = new THREE.TextureLoader();
 
+        const shipPaint = textureLoader.load('../assets/ImageForBlackReflective.png');
+
+        shipPaint.colorSpace = THREE.SRGBColorSpace;
+
+        const shipMaterial = new THREE.MeshStandardMaterial({
+            map: shipPaint,
+            color: 0xffffff,    // Keep white so the texture colors are accurate
+            metalness: 0.8,     // High metalness for that "reflective" look
+            roughness: 0.2      // Low roughness for a glossy/shiny finish
+        });
 
         /***********
         **        **
@@ -210,52 +206,52 @@ export class Camera6DOF
         **Mesh    **
         **        **
         ***********/
-        // const loader = new OBJLoader();
-        // loader.load('../assets/sgs_01.obj', (obj) => {
-        //     obj.traverse((child) => {
-        //         if (child.isMesh) {
-        //             child.material = shipMaterial;
-
-        //             // optional but VERY important for lighting quality
-        //             child.castShadow = true;
-        //             child.receiveShadow = true;
-        //         }
-        //     });
-
-
-        //     this.shipModel = obj;
-        //     this.origin.add(this.shipModel);
-
-        //     this.mesh.visible = false;
-        //     this.shapeLines.visible = false;
-        // });
-
-
-        /************************
-        **                     **
-        ** Texture   +   Model ** 
-        ** Material      Mesh  **
-        **                     **
-        ************************/
-        const loader = new GLTFLoader();
-
-        loader.load('../assets/sgs_01.glb', (gltf) => {
-            const model = gltf.scene;
-
-            this.shipModel = model;
-            this.origin.add(model);
-
-            model.traverse((child) => {
+        const loader = new OBJLoader();
+        loader.load('../assets/sgs_01.obj', (obj) => {
+            
+            // 5. Traverse the group to find the mesh pieces
+            obj.traverse((child) => {
                 if (child.isMesh) {
+                    // Apply our custom material to every part of the OBJ
+                    child.material = shipMaterial;
+    
+                    // Enable shadows for better depth
                     child.castShadow = true;
                     child.receiveShadow = true;
                 }
             });
-
+    
+            this.shipModel = obj;
+            this.origin.add(this.shipModel);
+    
+            // 6. Hide the debug wireframe box
             this.mesh.visible = false;
             this.shapeLines.visible = false;
         });
 
+        /************************
+        **                     **
+        ** Texture   +   Model ** 
+        ** Material      Mesh  ** // <--- if using ".gltf" I found skinning the model diffuclt with gltf
+        **                     **
+        ************************/
+        //  const textureLoader = new THREE.TextureLoader();
+        
+        //  // 1. Load your PNG from the assets folder
+        //  const shipPaint = textureLoader.load('../assets/ImageForBlackReflective.png');
+        
+        //  // 2. Ensure colors are vibrant (sRGB) and not washed out
+        //  shipPaint.colorSpace = THREE.SRGBColorSpace; 
+        
+        //  // 3. GLTF models use a different coordinate system for textures than OBJs
+        // shipPaint.flipY = false; 
+
+        //     const manualMaterial = new THREE.MeshStandardMaterial({
+        //     map: shipPaint,     // Use your painted PNG
+        //     color: 0xffffff,    // Neutral white (Let the texture colors shine)
+        //     metalness: 0.5,     // 100% Metallic
+        //     roughness: 0.5      // Mirror-like finish
+        // });
 
         // inputs controller + mouse keyboard
         this.strafeInpt = 0.0;
