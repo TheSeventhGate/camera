@@ -110,9 +110,6 @@ export class Camera6DOF
         this.mat   = new THREE.MeshBasicMaterial({color: 0Xdb341f, wireframe: false, transparent: true, opacity: 0.5});
         this.mesh  = new THREE.Mesh(this.shape, this.mat);
 
-        // offset from visual model (mesh != origin)
-        // REMOVED: this.mesh.rotation.x = Math.PI / 2; 
-
         // attach the mesh as a child of the origin
         this.origin.add(this.mesh);
         this.origin.add(this.shapeLines)
@@ -202,12 +199,12 @@ export class Camera6DOF
 
         /***********
         **        **
-        **Model   ** // <--- if using ".obj" file from blender (my first attempts)
+        **Model   **
         **Mesh    **
         **        **
         ***********/
         const loader = new OBJLoader();
-        loader.load('../assets/sgs_01.obj', (obj) => {
+        loader.load('../assets/sgs_02.obj', (obj) => {
             
             // 5. Traverse the group to find the mesh pieces
             obj.traverse((child) => {
@@ -221,8 +218,27 @@ export class Camera6DOF
                 }
             });
     
+            // raw model obj from blender export
             this.shipModel = obj;
             this.origin.add(this.shipModel);
+
+            // async add here. this is for thrusters
+            // this.shipModel.add(this.thruster_03_B);
+            // this.shipModel.add(this.thruster_03_E); 
+            // this.shipModel.add(this.thruster_04_A);
+            // this.shipModel.add(this.thruster_04_E); 
+            // this.shipModel.add(this.thruster_06_B);
+            // this.shipModel.add(this.thruster_06_E); 
+            // this.shipModel.add(this.thruster_07_B);
+            // this.shipModel.add(this.thruster_08_A); // done
+            // this.shipModel.add(this.thruster_09_A); // done
+            // this.shipModel.add(this.thruster_10_B);
+            // this.shipModel.add(this.thruster_11_B); 
+            // this.shipModel.add(this.thruster_11_E);
+            // this.shipModel.add(this.thruster_13_A); 
+            // this.shipModel.add(this.thruster_13_E);
+            // this.shipModel.add(this.thruster_14_B); 
+            // this.shipModel.add(this.thruster_14_E);
     
             // 6. Hide the debug wireframe box
             this.mesh.visible = false;
@@ -235,23 +251,131 @@ export class Camera6DOF
         ** Material      Mesh  ** // <--- if using ".gltf" I found skinning the model diffuclt with gltf
         **                     **
         ************************/
-        //  const textureLoader = new THREE.TextureLoader();
-        
-        //  // 1. Load your PNG from the assets folder
-        //  const shipPaint = textureLoader.load('../assets/ImageForBlackReflective.png');
-        
-        //  // 2. Ensure colors are vibrant (sRGB) and not washed out
-        //  shipPaint.colorSpace = THREE.SRGBColorSpace; 
-        
-        //  // 3. GLTF models use a different coordinate system for textures than OBJs
-        // shipPaint.flipY = false; 
+            //  const textureLoader = new THREE.TextureLoader();
+            
+            //  // 1. Load your PNG from the assets folder
+            //  const shipPaint = textureLoader.load('../assets/ImageForBlackReflective.png');
+            
+            //  // 2. Ensure colors are vibrant (sRGB) and not washed out
+            //  shipPaint.colorSpace = THREE.SRGBColorSpace; 
+            
+            //  // 3. GLTF models use a different coordinate system for textures than OBJs
+            // shipPaint.flipY = false; 
 
-        //     const manualMaterial = new THREE.MeshStandardMaterial({
-        //     map: shipPaint,     // Use your painted PNG
-        //     color: 0xffffff,    // Neutral white (Let the texture colors shine)
-        //     metalness: 0.5,     // 100% Metallic
-        //     roughness: 0.5      // Mirror-like finish
+            //     const manualMaterial = new THREE.MeshStandardMaterial({
+            //     map: shipPaint,     // Use your painted PNG
+            //     color: 0xffffff,    // Neutral white (Let the texture colors shine)
+            //     metalness: 0.5,     // 100% Metallic
+            //     roughness: 0.5      // Mirror-like finish
+            // });
+
+
+        /***********
+        **        **
+        **Thruster**
+        **Animates**
+        **        **
+        ***********/
+        /*
+            THRUSTER MAP:
+                |[01]|[02]|[03]|[04]|[05]|[06]|[07]|[08]|[09]|[10]|[11]|[12]|[13]|[14]|[15]|[16]|[17]|[18]|[19]|
+            ----------------------------------------------------------------------------------------------------
+            [A] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [B] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [C] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [D] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [E] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [F] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            + = MINOR THRUSTER
+            $ = MAJOR THRUSTER
+        */
+
+        // material used by all thrusters
+        // this.thrusterMaterial = new THREE.MeshBasicMaterial({
+        //     color: 0x00ffff,
+        //     transparent: true,
+        //     opacity: 0.8,
+        //     side: THREE.DoubleSide
         // });
+
+        // // shapes and sizes for all thrusters // mesh dimensions
+        // const thruster_size_03_B = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_03_E = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_04_A = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_04_E = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_06_B = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_06_E = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_07_B = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_08_A = new THREE.PlaneGeometry(0.22, 1.5); // done
+        // const thruster_size_09_A = new THREE.PlaneGeometry(0.22, 1.5); // done
+        // const thruster_size_10_B = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_11_B = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_11_E = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_13_A = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_13_E = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_14_B = new THREE.PlaneGeometry(0.22, 1.5);
+        // const thruster_size_14_E = new THREE.PlaneGeometry(0.22, 1.5);
+
+        // // mesh creation
+        // this.thruster_03_B = new THREE.Mesh(thruster_size_03_B, this.thrusterMaterial);
+        // this.thruster_03_E = new THREE.Mesh(thruster_size_03_E, this.thrusterMaterial);
+        // this.thruster_04_A = new THREE.Mesh(thruster_size_04_A, this.thrusterMaterial);
+        // this.thruster_04_E = new THREE.Mesh(thruster_size_04_E, this.thrusterMaterial);
+        // this.thruster_06_B = new THREE.Mesh(thruster_size_06_B, this.thrusterMaterial);
+        // this.thruster_06_E = new THREE.Mesh(thruster_size_06_E, this.thrusterMaterial);
+        // this.thruster_07_B = new THREE.Mesh(thruster_size_07_B, this.thrusterMaterial);
+        // this.thruster_08_A = new THREE.Mesh(thruster_size_08_A, this.thrusterMaterial); // done
+        // this.thruster_09_A = new THREE.Mesh(thruster_size_08_A, this.thrusterMaterial); // done
+        // this.thruster_10_B = new THREE.Mesh(thruster_size_10_B, this.thrusterMaterial);
+        // this.thruster_11_B = new THREE.Mesh(thruster_size_11_B, this.thrusterMaterial);
+        // this.thruster_11_E = new THREE.Mesh(thruster_size_11_E, this.thrusterMaterial);
+        // this.thruster_13_A = new THREE.Mesh(thruster_size_13_A, this.thrusterMaterial);
+        // this.thruster_13_E = new THREE.Mesh(thruster_size_13_E, this.thrusterMaterial);
+        // this.thruster_14_B = new THREE.Mesh(thruster_size_14_B, this.thrusterMaterial);
+        // this.thruster_14_E = new THREE.Mesh(thruster_size_14_E, this.thrusterMaterial);
+
+        // // positions for all thrusters
+        // this.thruster_03_B.position.set(-1.334,-0.15, 1.49); 
+        // this.thruster_03_E.position.set( 0.334,-0.15, 1.49); 
+        // this.thruster_04_A.position.set(-0.334,-0.15, 1.49); 
+        // this.thruster_04_E.position.set( 0.334,-0.15, 1.49); 
+        // this.thruster_06_B.position.set(-0.334,-0.15, 1.49); 
+        // this.thruster_06_E.position.set( 0.334,-0.15, 1.49); 
+        // this.thruster_07_B.position.set(-0.334,-0.15, 1.49); 
+        // this.thruster_08_A.position.set(-0.334,-0.15, 1.49); // done
+        // this.thruster_09_A.position.set( 0.334,-0.15, 1.49); // done
+        // this.thruster_10_B.position.set(-0.334,-0.15, 1.49); 
+        // this.thruster_11_B.position.set( 0.334,-0.15, 1.49); 
+        // this.thruster_11_E.position.set(-0.334,-0.15, 1.49); 
+        // this.thruster_13_A.position.set( 0.334,-0.15, 1.49); 
+        // this.thruster_13_E.position.set(-0.334,-0.15, 1.49); 
+        // this.thruster_14_B.position.set( 0.334,-0.15, 1.49); 
+        // this.thruster_14_E.position.set(-0.334,-0.15, 1.49); 
+
+        // attaching thrusters as children of mesh ... wont run here due to async function. see obj loader above
+        // this.shipModel.add(this.thruster_03_B);
+        // this.shipModel.add(this.thruster_03_E); 
+        // this.shipModel.add(this.thruster_04_A);
+        // this.shipModel.add(this.thruster_04_E); 
+        // this.shipModel.add(this.thruster_06_B);
+        // this.shipModel.add(this.thruster_06_E); 
+        // this.shipModel.add(this.thruster_07_B);
+        // this.shipModel.add(this.thruster_08_A); // done
+        // this.shipModel.add(this.thruster_09_A); // done
+        // this.shipModel.add(this.thruster_10_B);
+        // this.shipModel.add(this.thruster_11_B); 
+        // this.shipModel.add(this.thruster_11_E);
+        // this.shipModel.add(this.thruster_13_A); 
+        // this.shipModel.add(this.thruster_13_E);
+        // this.shipModel.add(this.thruster_14_B); 
+        // this.shipModel.add(this.thruster_14_E);
+
 
         // inputs controller + mouse keyboard
         this.strafeInpt = 0.0;
@@ -273,7 +397,8 @@ export class Camera6DOF
         this.upAxis          = new THREE.Vector3(0, 1, 0); // y
         this.fwrdAxis        = new THREE.Vector3(0, 0, 1); // z
         this.pitchQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -this.pitchInput * 0.05); // x
-        this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -this.yawInput   * 0.05); // y
+        //this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -this.yawInput   * 0.05); // y  // LOCAL
+        this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle( -this.yawInput, new THREE.Vector3(0,1,0)   * 0.05); // y  // GLOBAL
         this.rollQuaternion  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),  this.rollDelta  * 0.05); // z
         
         // velocities + thrusts + speeds
@@ -497,25 +622,6 @@ export class Camera6DOF
     ** DRAW           **
     **                **
     *******************/
-    /*
-        THRUSTER MAP:
-            |[01]|[02]|[03]|[04]|[05]|[06]|[07]|[08]|[09]|[10]|[11]|[12]|[13]|[14]|[15]|[16]|[17]|[18]|[19]|
-        ----------------------------------------------------------------------------------------------------
-        [A] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
-        ----------------------------------------------------------------------------------------------------
-        [B] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
-        ----------------------------------------------------------------------------------------------------
-        [C] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
-        ----------------------------------------------------------------------------------------------------
-        [D] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
-        ----------------------------------------------------------------------------------------------------
-        [E] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
-        ----------------------------------------------------------------------------------------------------
-        [F] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
-        ----------------------------------------------------------------------------------------------------
-        + = MINOR THRUSTER
-        $ = MAJOR THRUSTER
-    */
     update(gp, dt) // gp = gamepad ... dt = deltatime
     {
 
