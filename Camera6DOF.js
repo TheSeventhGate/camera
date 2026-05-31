@@ -1,10 +1,9 @@
+//
+//
+// ALL glory to the Creator YHWH and his Son, our King, Jesus Christ
+//
+//
 // this file: "Camera6DOF.js"
-// import { Quaternion } from 'three/src/Three.Core.js';
-
-import * as THREE from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
 // GAME START: [X][Y][-Z] ... -z is "forward" 
 //                                [Y]              [-Z] 
 //                                **              **
@@ -64,61 +63,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // SAME HANDEDNESS + FORWARD DIRECTION AS OPENGL
 // THREE.JS IS RIGHT-HANDED BY DEFAULT
 ////////////////////////////////////////////////////////////////////////////////////
-
-
-export class Camera6DOF 
-{
-
-    /*******************
-    **                **
-    ** Construct      **
-    **                **
-    *******************/
-    constructor(scene)
-    {
-
-        // WORLD
-        //   └── origin
-        //         ├── mesh
-        //         ├── shipModel
-        //         ├── camMount
-        //         ├── camTarget
-        //         └── camUpMount
-
-        // timing
-        this.dt = 0.0;
-
-        // origin root in relation to world space
-        this.origin = new THREE.Object3D();
-        scene.add(this.origin);
-
-        // positioning and rotations in relation to origin
-        this.position = new THREE.Vector3();
-        this.rotation = new THREE.Quaternion();
-
-        // camera
-        this.timeElapsed   = 0.0;
-        this.bobFrequency  = 1.2;  
-        this.bobAmplitude  = 0.2;
-        this.cameraBasePos = 0.0;
-
-        // visual model in relation to root above (can be considered local space)
-        // all edges and lines and mat below is for debug only
-        this.shape = new THREE.BoxGeometry( 1, 1, 1 );
-        this.shapeEdges = new THREE.EdgesGeometry(this.shape);
-        this.shapeLines = new THREE.LineSegments(this.shapeEdges);
-        this.mat   = new THREE.MeshBasicMaterial({color: 0Xdb341f, wireframe: false, transparent: true, opacity: 0.5});
-        this.mesh  = new THREE.Mesh(this.shape, this.mat);
-
-        // attach the mesh as a child of the origin
-        this.origin.add(this.mesh);
-        this.origin.add(this.shapeLines)
-
-        /***********
-        **        **
-        ** Model  **
-        **        **
-        ***********//*
+        /*
         Workflow:
         |
         |
@@ -178,6 +123,102 @@ export class Camera6DOF
 
         */
 
+        /************************
+        **                     **
+        ** Texture   +   Model ** 
+        ** Material      Mesh  ** // <--- if using ".gltf" I found skinning the model diffuclt with gltf
+        **                     ** // <--- this did not work well with the blender export
+        ************************/
+        //  const textureLoader = new THREE.TextureLoader();
+        
+        //  // 1. Load your PNG from the assets folder
+        //  const shipPaint = textureLoader.load('../assets/ImageForBlackReflective.png');
+        
+        //  // 2. Ensure colors are vibrant (sRGB) and not washed out
+        //  shipPaint.colorSpace = THREE.SRGBColorSpace; 
+        
+        //  // 3. GLTF models use a different coordinate system for textures than OBJs
+        // shipPaint.flipY = false; 
+
+        //     const manualMaterial = new THREE.MeshStandardMaterial({
+        //     map: shipPaint,     // Use your painted PNG
+        //     color: 0xffffff,    // Neutral white (Let the texture colors shine)
+        //     metalness: 0.5,     // 100% Metallic
+        //     roughness: 0.5      // Mirror-like finish
+        // });
+
+        /*
+            THRUSTER MAP from "six_dof_object.c":
+                |[01]|[02]|[03]|[04]|[05]|[06]|[07]|[08]|[09]|[10]|[11]|[12]|[13]|[14]|[15]|[16]|[17]|[18]|[19]|
+            ----------------------------------------------------------------------------------------------------
+            [A] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [B] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [C] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [D] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [E] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            [F] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
+            ----------------------------------------------------------------------------------------------------
+            + = MINOR THRUSTER
+            $ = MAJOR THRUSTER
+        */
+
+import * as THREE from 'three';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+export class Camera6DOF 
+{
+
+    /*******************
+    **                **
+    ** Construct      **
+    **                **
+    *******************/
+    constructor(scene)
+    {
+
+        // WORLD
+        //   └── origin
+        //         ├── mesh
+        //         ├── shipModel
+        //         ├── camMount
+        //         ├── camTarget
+        //         └── camUpMount
+
+        // timing
+        this.dt = 0.0;
+
+        // origin root in relation to world space
+        this.origin = new THREE.Object3D();
+        scene.add(this.origin);
+
+        // positioning and rotations in relation to origin
+        this.position = new THREE.Vector3();
+        this.rotation = new THREE.Quaternion();
+
+        // camera
+        this.timeElapsed   = 0.0;
+        this.bobFrequency  = 1.2;  
+        this.bobAmplitude  = 0.2;
+        this.cameraBasePos = 0.0;
+
+        // visual model in relation to root above (can be considered local space)
+        // all edges and lines and mat below is for debug only
+        this.shape = new THREE.BoxGeometry( 1, 1, 1 );
+        this.shapeEdges = new THREE.EdgesGeometry(this.shape);
+        this.shapeLines = new THREE.LineSegments(this.shapeEdges);
+        this.mat   = new THREE.MeshBasicMaterial({color: 0Xdb341f, wireframe: false, transparent: true, opacity: 0.5});
+        this.mesh  = new THREE.Mesh(this.shape, this.mat);
+
+        // attach the mesh as a child of the origin
+        this.origin.add(this.mesh);
+        this.origin.add(this.shapeLines)
+
         /***********
         **        **
         **Texture **
@@ -206,7 +247,7 @@ export class Camera6DOF
         const loader = new OBJLoader();
         loader.load('../assets/sgs_02.obj', (obj) => {
             
-            // 5. Traverse the group to find the mesh pieces
+            // traverse the group to find the mesh pieces
             obj.traverse((child) => {
                 if (child.isMesh) {
                     // Apply our custom material to every part of the OBJ
@@ -222,52 +263,11 @@ export class Camera6DOF
             this.shipModel = obj;
             this.origin.add(this.shipModel);
 
-            // async add here. this is for thrusters
-            // this.shipModel.add(this.thruster_03_B);
-            // this.shipModel.add(this.thruster_03_E); 
-            // this.shipModel.add(this.thruster_04_A);
-            // this.shipModel.add(this.thruster_04_E); 
-            // this.shipModel.add(this.thruster_06_B);
-            // this.shipModel.add(this.thruster_06_E); 
-            // this.shipModel.add(this.thruster_07_B);
-            // this.shipModel.add(this.thruster_08_A); // done
-            // this.shipModel.add(this.thruster_09_A); // done
-            // this.shipModel.add(this.thruster_10_B);
-            // this.shipModel.add(this.thruster_11_B); 
-            // this.shipModel.add(this.thruster_11_E);
-            // this.shipModel.add(this.thruster_13_A); 
-            // this.shipModel.add(this.thruster_13_E);
-            // this.shipModel.add(this.thruster_14_B); 
-            // this.shipModel.add(this.thruster_14_E);
     
-            // 6. Hide the debug wireframe box
+            // hide the debug wireframe box
             this.mesh.visible = false;
             this.shapeLines.visible = false;
         });
-
-        /************************
-        **                     **
-        ** Texture   +   Model ** 
-        ** Material      Mesh  ** // <--- if using ".gltf" I found skinning the model diffuclt with gltf
-        **                     **
-        ************************/
-            //  const textureLoader = new THREE.TextureLoader();
-            
-            //  // 1. Load your PNG from the assets folder
-            //  const shipPaint = textureLoader.load('../assets/ImageForBlackReflective.png');
-            
-            //  // 2. Ensure colors are vibrant (sRGB) and not washed out
-            //  shipPaint.colorSpace = THREE.SRGBColorSpace; 
-            
-            //  // 3. GLTF models use a different coordinate system for textures than OBJs
-            // shipPaint.flipY = false; 
-
-            //     const manualMaterial = new THREE.MeshStandardMaterial({
-            //     map: shipPaint,     // Use your painted PNG
-            //     color: 0xffffff,    // Neutral white (Let the texture colors shine)
-            //     metalness: 0.5,     // 100% Metallic
-            //     roughness: 0.5      // Mirror-like finish
-            // });
 
 
         /***********
@@ -276,26 +276,6 @@ export class Camera6DOF
         **Animates**
         **        **
         ***********/
-        /*
-            THRUSTER MAP:
-                |[01]|[02]|[03]|[04]|[05]|[06]|[07]|[08]|[09]|[10]|[11]|[12]|[13]|[14]|[15]|[16]|[17]|[18]|[19]|
-            ----------------------------------------------------------------------------------------------------
-            [A] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
-            ----------------------------------------------------------------------------------------------------
-            [B] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
-            ----------------------------------------------------------------------------------------------------
-            [C] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
-            ----------------------------------------------------------------------------------------------------
-            [D] |    |    |    |    |    |    | $$ | $$ | $$ | $$ |    |    |    |    |    |    |    |    |    |
-            ----------------------------------------------------------------------------------------------------
-            [E] |    |    | ++ | $$ |    | ++ | $$ | $$ | $$ | $$ | ++ |    | $$ | ++ |    |    |    |    |    |
-            ----------------------------------------------------------------------------------------------------
-            [F] |    |    |    | $$ |    |    |    | $$ | $$ |    |    |    | $$ |    |    |    |    |    |    |
-            ----------------------------------------------------------------------------------------------------
-            + = MINOR THRUSTER
-            $ = MAJOR THRUSTER
-        */
-
         // material used by all thrusters
         // this.thrusterMaterial = new THREE.MeshBasicMaterial({
         //     color: 0x00ffff,
@@ -303,79 +283,6 @@ export class Camera6DOF
         //     opacity: 0.8,
         //     side: THREE.DoubleSide
         // });
-
-        // // shapes and sizes for all thrusters // mesh dimensions
-        // const thruster_size_03_B = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_03_E = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_04_A = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_04_E = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_06_B = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_06_E = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_07_B = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_08_A = new THREE.PlaneGeometry(0.22, 1.5); // done
-        // const thruster_size_09_A = new THREE.PlaneGeometry(0.22, 1.5); // done
-        // const thruster_size_10_B = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_11_B = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_11_E = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_13_A = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_13_E = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_14_B = new THREE.PlaneGeometry(0.22, 1.5);
-        // const thruster_size_14_E = new THREE.PlaneGeometry(0.22, 1.5);
-
-        // // mesh creation
-        // this.thruster_03_B = new THREE.Mesh(thruster_size_03_B, this.thrusterMaterial);
-        // this.thruster_03_E = new THREE.Mesh(thruster_size_03_E, this.thrusterMaterial);
-        // this.thruster_04_A = new THREE.Mesh(thruster_size_04_A, this.thrusterMaterial);
-        // this.thruster_04_E = new THREE.Mesh(thruster_size_04_E, this.thrusterMaterial);
-        // this.thruster_06_B = new THREE.Mesh(thruster_size_06_B, this.thrusterMaterial);
-        // this.thruster_06_E = new THREE.Mesh(thruster_size_06_E, this.thrusterMaterial);
-        // this.thruster_07_B = new THREE.Mesh(thruster_size_07_B, this.thrusterMaterial);
-        // this.thruster_08_A = new THREE.Mesh(thruster_size_08_A, this.thrusterMaterial); // done
-        // this.thruster_09_A = new THREE.Mesh(thruster_size_08_A, this.thrusterMaterial); // done
-        // this.thruster_10_B = new THREE.Mesh(thruster_size_10_B, this.thrusterMaterial);
-        // this.thruster_11_B = new THREE.Mesh(thruster_size_11_B, this.thrusterMaterial);
-        // this.thruster_11_E = new THREE.Mesh(thruster_size_11_E, this.thrusterMaterial);
-        // this.thruster_13_A = new THREE.Mesh(thruster_size_13_A, this.thrusterMaterial);
-        // this.thruster_13_E = new THREE.Mesh(thruster_size_13_E, this.thrusterMaterial);
-        // this.thruster_14_B = new THREE.Mesh(thruster_size_14_B, this.thrusterMaterial);
-        // this.thruster_14_E = new THREE.Mesh(thruster_size_14_E, this.thrusterMaterial);
-
-        // // positions for all thrusters
-        // this.thruster_03_B.position.set(-1.334,-0.15, 1.49); 
-        // this.thruster_03_E.position.set( 0.334,-0.15, 1.49); 
-        // this.thruster_04_A.position.set(-0.334,-0.15, 1.49); 
-        // this.thruster_04_E.position.set( 0.334,-0.15, 1.49); 
-        // this.thruster_06_B.position.set(-0.334,-0.15, 1.49); 
-        // this.thruster_06_E.position.set( 0.334,-0.15, 1.49); 
-        // this.thruster_07_B.position.set(-0.334,-0.15, 1.49); 
-        // this.thruster_08_A.position.set(-0.334,-0.15, 1.49); // done
-        // this.thruster_09_A.position.set( 0.334,-0.15, 1.49); // done
-        // this.thruster_10_B.position.set(-0.334,-0.15, 1.49); 
-        // this.thruster_11_B.position.set( 0.334,-0.15, 1.49); 
-        // this.thruster_11_E.position.set(-0.334,-0.15, 1.49); 
-        // this.thruster_13_A.position.set( 0.334,-0.15, 1.49); 
-        // this.thruster_13_E.position.set(-0.334,-0.15, 1.49); 
-        // this.thruster_14_B.position.set( 0.334,-0.15, 1.49); 
-        // this.thruster_14_E.position.set(-0.334,-0.15, 1.49); 
-
-        // attaching thrusters as children of mesh ... wont run here due to async function. see obj loader above
-        // this.shipModel.add(this.thruster_03_B);
-        // this.shipModel.add(this.thruster_03_E); 
-        // this.shipModel.add(this.thruster_04_A);
-        // this.shipModel.add(this.thruster_04_E); 
-        // this.shipModel.add(this.thruster_06_B);
-        // this.shipModel.add(this.thruster_06_E); 
-        // this.shipModel.add(this.thruster_07_B);
-        // this.shipModel.add(this.thruster_08_A); // done
-        // this.shipModel.add(this.thruster_09_A); // done
-        // this.shipModel.add(this.thruster_10_B);
-        // this.shipModel.add(this.thruster_11_B); 
-        // this.shipModel.add(this.thruster_11_E);
-        // this.shipModel.add(this.thruster_13_A); 
-        // this.shipModel.add(this.thruster_13_E);
-        // this.shipModel.add(this.thruster_14_B); 
-        // this.shipModel.add(this.thruster_14_E);
-
 
         // inputs controller + mouse keyboard
         this.strafeInpt = 0.0;
@@ -397,8 +304,7 @@ export class Camera6DOF
         this.upAxis          = new THREE.Vector3(0, 1, 0); // y
         this.fwrdAxis        = new THREE.Vector3(0, 0, 1); // z
         this.pitchQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -this.pitchInput * 0.05); // x
-        //this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -this.yawInput   * 0.05); // y  // LOCAL
-        this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle( -this.yawInput, new THREE.Vector3(0,1,0)   * 0.05); // y  // GLOBAL
+        this.yawQuaternion   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), -this.yawInput   * 0.05); // y  
         this.rollQuaternion  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),  this.rollDelta  * 0.05); // z
         
         // velocities + thrusts + speeds
@@ -428,27 +334,69 @@ export class Camera6DOF
     **                **
     *******************/
     mountCamera(camera)
-    {
+    {   
+        // camera reference (by default js passes everything by reference)
         this.camera = camera;
-        // DO NOT add to origin. Add to scene instead.
-        // scene.add(this.camera); // Usually already in scene from main.js
 
-        // Create a "Mount Point" that IS welded to the ship
+        // create a "Mount Point" that IS welded to the ship
         this.camMount = new THREE.Object3D();
         this.camMount.position.set(0, 6, 13.0);
         this.origin.add(this.camMount);
 
-        // A point 1 unit directly "above" the ship center
+        // which way is up relative to the ship
         this.camUpMount = new THREE.Object3D();
         this.camUpMount.position.set(0, 1, 0); 
         this.origin.add(this.camUpMount);
 
-        // Create a "LookAt Point" that IS welded to the ship
+        // create a "look at point" that IS welded to the ship
         this.camTarget = new THREE.Object3D();
         this.camTarget.position.set(0, 0, -32.0);
         this.origin.add(this.camTarget);
     }
 
+    /*******************
+    **                **
+    ** Update Camera  **
+    **                **
+    *******************/
+    updateCamera()
+    {
+        // bob to the mount (which is a child of the ship)
+        const bobOffset   = Math.sin(this.timeElapsed * this.bobFrequency) * this.bobAmplitude;
+        const driftOffset = Math.cos(this.timeElapsed * 0.05) * 0.01;
+
+        // use the local offsets (0 for X, 6 for Y)
+        this.camMount.position.x = 0 + driftOffset;
+        this.camMount.position.y = 6 + bobOffset;
+
+        // chase (World Space)
+        const goalPosition = new THREE.Vector3();
+        this.camMount.getWorldPosition(goalPosition);
+
+        const goalLookAt = new THREE.Vector3();
+        this.camTarget.getWorldPosition(goalLookAt);
+
+        const shipUp = new THREE.Vector3();
+        this.camUpMount.getWorldPosition(shipUp);
+        const upDirection = shipUp.sub(this.origin.position).normalize();
+
+        // lerp the camera towards the bobbing goal
+        if (this.camera) 
+        {
+            // calc how far away the camera is from its ideal spot
+            const distance = this.camera.position.distanceTo(goalPosition);
+
+            // create a dynamic tightness: 
+            // if distance is small, use 0.05 (lazy). 
+            // if distance is huge, use 1.0 (hard-locked snap).
+            const tightness = THREE.MathUtils.clamp(distance * 0.1, 0.01, 1.0);
+
+            this.camera.position.lerp(goalPosition, tightness); 
+
+            this.camera.up.copy(upDirection); 
+            this.camera.lookAt(goalLookAt);
+        }
+    }
 
     /*******************
     **                **
@@ -562,7 +510,7 @@ export class Camera6DOF
 
         // apply yaw
         this.yawQuaternion.setFromAxisAngle(this.upAxis, -this.yawVelocity * this.dt);
-        this.rotation.multiply(this.yawQuaternion); // local see A * B order of this quaternion in constructor
+        this.rotation.multiply(this.yawQuaternion); // local see A * B order of this quaternion in constructor // premultiply would be B * A
 
         /***********
         **        **
@@ -585,7 +533,7 @@ export class Camera6DOF
 
         // apply pitch
         this.pitchQuaternion.setFromAxisAngle(this.rightAxis, -this.pitchVelocity * this.dt);
-        this.rotation.multiply(this.pitchQuaternion); //local see A * B order of this quaternion in constructor
+        this.rotation.multiply(this.pitchQuaternion); // local see A * B order of this quaternion in constructor // premultiply would be B * A
 
         /***********
         **        **
@@ -625,46 +573,12 @@ export class Camera6DOF
     update(gp, dt) // gp = gamepad ... dt = deltatime
     {
 
+        // increment time at the very start so the math changes
         this.dt = dt;
-
-        //  increment time at the very start so the math changes
         this.timeElapsed += dt;
 
-        // bob to the Mount (which is a child of the ship)
-        const bobOffset = Math.sin(this.timeElapsed * this.bobFrequency) * this.bobAmplitude;
-        const driftOffset = Math.cos(this.timeElapsed * 0.05) * 0.01;
-
-        // use the local offsets (0 for X, 6 for Y)
-        this.camMount.position.x = 0 + driftOffset;
-        this.camMount.position.y = 6 + bobOffset;
-
-        // chase (World Space)
-        const goalPosition = new THREE.Vector3();
-        this.camMount.getWorldPosition(goalPosition);
-
-        const goalLookAt = new THREE.Vector3();
-        this.camTarget.getWorldPosition(goalLookAt);
-
-        const shipUp = new THREE.Vector3();
-        this.camUpMount.getWorldPosition(shipUp);
-        const upDirection = shipUp.sub(this.origin.position).normalize();
-
-        // lerp the camera towards the bobbing goal
-        if (this.camera) 
-        {
-            // calc how far away the camera is from its ideal spot
-            const distance = this.camera.position.distanceTo(goalPosition);
-
-            // create a dynamic tightness: 
-            // if distance is small, use 0.05 (lazy). 
-            // if distance is huge, use 1.0 (hard-locked snap).
-            const tightness = THREE.MathUtils.clamp(distance * 0.1, 0.01, 1.0);
-
-            this.camera.position.lerp(goalPosition, tightness); 
-
-            this.camera.up.copy(upDirection); 
-            this.camera.lookAt(goalLookAt);
-        }
+        // camera follows player and bobs in sinusoidal fashion
+        this.updateCamera();
 
         // call members and apply
         this.processInputs(gp);
