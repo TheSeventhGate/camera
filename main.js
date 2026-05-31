@@ -10,31 +10,45 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { Camera6DOF } from './Camera6DOF.js';
 const scene = new THREE.Scene();
 
-// Basic Lighting (Required to see non-wireframe objects)
-// const light = new THREE.AmbientLight( 0xffffff, 1.0 ); 
-// scene.add( light );
+// window resolution
+let RENDER_WIDTH = window.innerWidth;
+let RENDER_HEIGHT = window.innerHeight;
 
-// for consistant render math 1290 x 1080
-// const RENDER_WIDTH = 1290;
-// const RENDER_HEIGHT = 1080;
-const RENDER_WIDTH = 5120;
-const RENDER_HEIGHT = 2160
-
-
+// camera
 const camera = new THREE.PerspectiveCamera( 50, RENDER_WIDTH / RENDER_HEIGHT, 0.1, 1000  );
 const renderer = new THREE.WebGLRenderer();
 
-// render buffer is fixed size
+// opengl render buffer is fixed size + handle html dom margins
 renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT, false);
 document.body.style.margin = "0";
 document.body.style.overflow = "auto";
-// renderer.domElement.style.width = "1290px";
-// renderer.domElement.style.height = "1080px";
-renderer.domElement.style.width = "5120px";
-renderer.domElement.style.height = "2160px";
+renderer.domElement.style.width = RENDER_WIDTH;
+renderer.domElement.style.height = RENDER_HEIGHT;
 renderer.setPixelRatio(1); // Force rendering to use a 1:1 pixel scale so graphics math behaves consistently across different monitors and DPI settings
 document.body.style.margin = "0";
 document.body.appendChild(renderer.domElement);
+
+// event listner incase the above resolutions + window size changes due to user altering the window sizes
+window.addEventListener('resize', () => {
+
+  // update local width/height variables
+  RENDER_WIDTH = window.innerWidth;
+  RENDER_HEIGHT = window.innerHeight;
+
+  // update the camera aspect ratio
+  camera.aspect = RENDER_WIDTH / RENDER_HEIGHT;
+  camera.updateProjectionMatrix(); // <-- critical: Forces the camera to recalculate its math
+
+  // update the OpenGL Render Buffer
+  // this resizes the actual "drawing surface"
+  renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT, false);
+
+  // update the Canvas CSS (The visual container)
+  renderer.domElement.style.width = RENDER_WIDTH + 'px';
+  renderer.domElement.style.height = RENDER_HEIGHT + 'px';
+
+});
+
 
 /*******************
 **                **
@@ -43,7 +57,6 @@ document.body.appendChild(renderer.domElement);
 *******************/
 let lastTime = 0;
 let deltaTime = 0;
-
 
 /*******************
 **                ** 
@@ -161,28 +174,48 @@ const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 sunMesh.position.copy(sunLight.position);
 scene.add(sunMesh);
 
-// Ship specific lighting
+// Ship specific lighting (eventually move this to ship obj Camera6DOF.js)
 // -10 z seems to be about right bove center fusalage
-const shipLight_01 = new THREE.DirectionalLight(0xffffff, 5.0); // Bright white light
-shipLight_01.position.set(0, 30, -10); // Coming from above and to the side
+const shipLight_01 = new THREE.DirectionalLight(0xffffff, 5.0); // debug red
+shipLight_01.position.set(0, 10, -10); // Coming from above and to the side
 scene.add(shipLight_01);
 
-const shipLight_02 = new THREE.DirectionalLight(0xffffff, 5.0); // Bright white light
-shipLight_02.position.set(-20, -30, 10); // Coming from above and to the side
+const shipLight_02 = new THREE.DirectionalLight(0xffffff, 5.0); // debug green
+shipLight_02.position.set(-10, -10, 10); // Coming from above and to the side
 scene.add(shipLight_02);
 
-const shipLight_03 = new THREE.DirectionalLight(0xffffff, 5.0); // Bright white light
-shipLight_03.position.set(20, 30, 10); // Coming from above and to the side
+const shipLight_03 = new THREE.DirectionalLight(0xffffff, 5.0); // debug blue
+shipLight_03.position.set(10, 10, 10); // Coming from above and to the side
 scene.add(shipLight_03);
 
+// debug and visualize where the above lights are:
+const lightSphereGeo = new THREE.SphereGeometry(0.5, 8, 8);
+const lightSphereMat_01 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const lightSphereMat_02 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const lightSphereMat_03 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 
-// const sunLight = new THREE.DirectionalLight(0xffffff, 100.0); // Bright white light
+
+// visual for Ship Light 01
+const shipLight_01_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_01);
+shipLight_01_Mesh.position.copy(shipLight_01.position);
+scene.add(shipLight_01_Mesh);
+
+// visual for Ship Light 02
+const shipLight_02_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_02);
+shipLight_02_Mesh.position.copy(shipLight_02.position);
+scene.add(shipLight_02_Mesh);
+
+// visual for Ship Light 03
+const shipLight_03_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_03);
+shipLight_03_Mesh.position.copy(shipLight_03.position);
+scene.add(shipLight_03_Mesh);
+
 
 
 
 /*******************
 **                ** 
-** GAME LOOP      **
+** MAIN GAME LOOP **
 **                **
 *******************/
 function animate( time ) {
