@@ -15,8 +15,12 @@ const scene = new THREE.Scene();
 // scene.add( light );
 
 // for consistant render math 1290 x 1080
-const RENDER_WIDTH = 1290;
-const RENDER_HEIGHT = 1080;
+// const RENDER_WIDTH = 1290;
+// const RENDER_HEIGHT = 1080;
+const RENDER_WIDTH = 5120;
+const RENDER_HEIGHT = 2160
+
+
 const camera = new THREE.PerspectiveCamera( 50, RENDER_WIDTH / RENDER_HEIGHT, 0.1, 1000  );
 const renderer = new THREE.WebGLRenderer();
 
@@ -24,8 +28,10 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT, false);
 document.body.style.margin = "0";
 document.body.style.overflow = "auto";
-renderer.domElement.style.width = "1290px";
-renderer.domElement.style.height = "1080px";
+// renderer.domElement.style.width = "1290px";
+// renderer.domElement.style.height = "1080px";
+renderer.domElement.style.width = "5120px";
+renderer.domElement.style.height = "2160px";
 renderer.setPixelRatio(1); // Force rendering to use a 1:1 pixel scale so graphics math behaves consistently across different monitors and DPI settings
 document.body.style.margin = "0";
 document.body.appendChild(renderer.domElement);
