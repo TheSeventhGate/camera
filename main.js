@@ -155,8 +155,8 @@ theGrid.position.y = -2;
 **                **
 *******************/
 // slaved to 6dof obj --> ALL objects in javascript are passed by reference
-const cameraRig = new Camera6DOF(scene); // 6dof custom class
-cameraRig.mountCamera(camera);
+const player = new Camera6DOF(scene); // 6dof custom class
+player.mountCamera(camera);
 
 
 /*******************
@@ -220,16 +220,22 @@ scene.add(shipLight_03_Mesh);
 function animate( time ) {
 
   // timing... "time" is provided by THREE.js + Canvas's "requestAnimationFrame"
+  // delta time iteration
   if (lastTime > 0) {
     deltaTime = (time - lastTime) / 1000; // time in milli since last frame
   }
   lastTime = time;
+  
+  // delta time 
   const dt = Math.min(deltaTime, 0.1); // The browser is sensitive to postion and size change, this gaurds against the pause
   
+  // windows xbox controller
   const gp = getGamepad();
 
-  cameraRig.update(gp, dt); // returns NULL
+  // player
+  player.update(gp, dt); // returns NULL
 
+  // renderer
   renderer.render( scene, camera );
 
 }

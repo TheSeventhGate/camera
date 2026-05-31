@@ -1,6 +1,11 @@
 //
 //
-// ALL glory to the Creator YHWH and his Son, our King, Jesus Christ
+//       *****************************************************************************
+//       **                                                                         **
+//       **     All glory to the Creator YHWH and his Son, our King, Jesus Christ   **
+//       **                                                                         **
+//       *****************************************************************************
+//
 //
 //
 // this file: "Camera6DOF.js"
@@ -182,7 +187,7 @@ export class Camera6DOF
     constructor(scene)
     {
 
-        // WORLD
+        // world
         //   └── origin
         //         ├── mesh
         //         ├── shipModel
@@ -201,19 +206,13 @@ export class Camera6DOF
         this.position = new THREE.Vector3();
         this.rotation = new THREE.Quaternion();
 
-        // camera
-        this.timeElapsed   = 0.0;
-        this.bobFrequency  = 1.2;  
-        this.bobAmplitude  = 0.2;
-        this.cameraBasePos = 0.0;
-
         // visual model in relation to root above (can be considered local space)
         // all edges and lines and mat below is for debug only
-        this.shape = new THREE.BoxGeometry( 1, 1, 1 );
+        this.shape      = new THREE.BoxGeometry( 1, 1, 1 );
         this.shapeEdges = new THREE.EdgesGeometry(this.shape);
         this.shapeLines = new THREE.LineSegments(this.shapeEdges);
-        this.mat   = new THREE.MeshBasicMaterial({color: 0Xdb341f, wireframe: false, transparent: true, opacity: 0.5});
-        this.mesh  = new THREE.Mesh(this.shape, this.mat);
+        this.mat        = new THREE.MeshBasicMaterial({color: 0Xdb341f, wireframe: false, transparent: true, opacity: 0.5});
+        this.mesh       = new THREE.Mesh(this.shape, this.mat);
 
         // attach the mesh as a child of the origin
         this.origin.add(this.mesh);
@@ -326,6 +325,12 @@ export class Camera6DOF
         this.dampYawSpeed      = 0.1;  // y ... rotate
         this.dampRollSpeed     = 0.1;  // z ... rotate
 
+        // camera
+        this.timeElapsed      = 0.0;
+        this.cameraFrequency  = 1.2;  
+        this.cameraAmplitude  = 0.2;
+        this.cameraBasePos    = 0.0;
+
     }
 
     /*******************
@@ -338,20 +343,12 @@ export class Camera6DOF
         // camera reference (by default js passes everything by reference)
         this.camera = camera;
 
-        // create a "Mount Point" that IS welded to the ship
-        this.camMount = new THREE.Object3D();
-        this.camMount.position.set(0, 6, 13.0);
-        this.origin.add(this.camMount);
+        // make this reference camera a "child" of this player obj
+        this.origin.add(this.camera);
 
-        // which way is up relative to the ship
-        this.camUpMount = new THREE.Object3D();
-        this.camUpMount.position.set(0, 1, 0); 
-        this.origin.add(this.camUpMount);
+        // position camera relative this this "origin" || player ship at (0, 10, 10)
+        this.camera.position.set(0, 6, 18);
 
-        // create a "look at point" that IS welded to the ship
-        this.camTarget = new THREE.Object3D();
-        this.camTarget.position.set(0, 0, -32.0);
-        this.origin.add(this.camTarget);
     }
 
     /*******************
@@ -361,41 +358,7 @@ export class Camera6DOF
     *******************/
     updateCamera()
     {
-        // bob to the mount (which is a child of the ship)
-        const bobOffset   = Math.sin(this.timeElapsed * this.bobFrequency) * this.bobAmplitude;
-        const driftOffset = Math.cos(this.timeElapsed * 0.05) * 0.01;
 
-        // use the local offsets (0 for X, 6 for Y)
-        this.camMount.position.x = 0 + driftOffset;
-        this.camMount.position.y = 6 + bobOffset;
-
-        // chase (World Space)
-        const goalPosition = new THREE.Vector3();
-        this.camMount.getWorldPosition(goalPosition);
-
-        const goalLookAt = new THREE.Vector3();
-        this.camTarget.getWorldPosition(goalLookAt);
-
-        const shipUp = new THREE.Vector3();
-        this.camUpMount.getWorldPosition(shipUp);
-        const upDirection = shipUp.sub(this.origin.position).normalize();
-
-        // lerp the camera towards the bobbing goal
-        if (this.camera) 
-        {
-            // calc how far away the camera is from its ideal spot
-            const distance = this.camera.position.distanceTo(goalPosition);
-
-            // create a dynamic tightness: 
-            // if distance is small, use 0.05 (lazy). 
-            // if distance is huge, use 1.0 (hard-locked snap).
-            const tightness = THREE.MathUtils.clamp(distance * 0.1, 0.01, 1.0);
-
-            this.camera.position.lerp(goalPosition, tightness); 
-
-            this.camera.up.copy(upDirection); 
-            this.camera.lookAt(goalLookAt);
-        }
     }
 
     /*******************
