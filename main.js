@@ -165,27 +165,27 @@ cameraRig.mountCamera(camera);
 **                **
 *******************/
 // Space lights / general lighting
-const sunLight = new THREE.PointLight(0xffffff, 500.0); // Bright white light
-sunLight.position.set(0, 200, 0); // Coming from above and to the side
-scene.add(sunLight);
-const sunGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Bright Yellow
-const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-sunMesh.position.copy(sunLight.position);
-scene.add(sunMesh);
+// const sunLight = new THREE.PointLight(0xffffff, 500.0); // Bright white light
+// sunLight.position.set(0, 200, 0); // Coming from above and to the side
+// scene.add(sunLight);
+// const sunGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+// const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Bright Yellow
+// const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+// sunMesh.position.copy(sunLight.position);
+// scene.add(sunMesh);
 
 // Ship specific lighting (eventually move this to ship obj Camera6DOF.js)
 // -10 z seems to be about right bove center fusalage
-const shipLight_01 = new THREE.DirectionalLight(0xffffff, 5.0); // debug red
-shipLight_01.position.set(0, 10, -10); // Coming from above and to the side
+const shipLight_01 = new THREE.DirectionalLight(0xffffff, 50.0); // debug red
+shipLight_01.position.set(0, 5, -3); // Coming from above and to the side
 scene.add(shipLight_01);
 
-const shipLight_02 = new THREE.DirectionalLight(0xffffff, 5.0); // debug green
-shipLight_02.position.set(-10, -10, 10); // Coming from above and to the side
+const shipLight_02 = new THREE.DirectionalLight(0xffffff, 25.0); // debug green
+shipLight_02.position.set(5, 0, 5); // Coming from above and to the side
 scene.add(shipLight_02);
 
-const shipLight_03 = new THREE.DirectionalLight(0xffffff, 5.0); // debug blue
-shipLight_03.position.set(10, 10, 10); // Coming from above and to the side
+const shipLight_03 = new THREE.DirectionalLight(0xffffff, 25.0); // debug blue
+shipLight_03.position.set(-5, 0, 5); // Coming from above and to the side
 scene.add(shipLight_03);
 
 // debug and visualize where the above lights are:
@@ -193,7 +193,6 @@ const lightSphereGeo = new THREE.SphereGeometry(0.5, 8, 8);
 const lightSphereMat_01 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const lightSphereMat_02 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const lightSphereMat_03 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-
 
 // visual for Ship Light 01
 const shipLight_01_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_01);
