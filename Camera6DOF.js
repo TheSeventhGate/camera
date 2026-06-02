@@ -239,8 +239,8 @@ export class Camera6DOF
 
         /***********
         **        **
-        **Model   **
-        **Mesh    **
+        ** Model  **
+        ** Mesh   **
         **        **
         ***********/
         const loader = new OBJLoader();
@@ -261,7 +261,6 @@ export class Camera6DOF
             // raw model obj from blender export
             this.shipModel = obj;
             this.origin.add(this.shipModel);
-
     
             // hide the debug wireframe box
             this.mesh.visible = false;
@@ -295,6 +294,8 @@ export class Camera6DOF
         this.rghtTriggr = { pressed: false, value: 0 }; 
         this.leftBumper = { pressed: false, value: 0 }; 
         this.rghtBumper = { pressed: false, value: 0 };
+        this.buttonA    = { pressed: false, value: 0 };
+        this.buttonX    = { pressed: false, value: 0 };
 
         // vectors + flight control characteristics
         this.strafeVector    = new THREE.Vector3(1, 0, 0); // x
@@ -325,6 +326,10 @@ export class Camera6DOF
         this.dampYawSpeed      = 0.1;  // y ... rotate
         this.dampRollSpeed     = 0.1;  // z ... rotate
 
+        // camera state
+        this.firstPerson = false;
+        this.buttonXPrev = false;
+
         // camera
         this.camera           = null;
         this.timeElapsed      = 0.0;
@@ -333,8 +338,8 @@ export class Camera6DOF
         this.cameraBasePos    = 0.0;
 
         // camera physics (trailing/elastic)
-        this.camWeldPoint     = new THREE.Vector3(0, 4, 12); // Ideal chase position
         // this.lookTarget    = new THREE.Vector3(0, 1, -35);// <-- breaks look at if i do it this way
+        this.camWeldPoint     = new THREE.Vector3(0, 4, 12); // Ideal chase position
         this.camRadius        = 1.5;                         // Max displacement sphere
         this.camLerpSpeed     = 4.0;                         // How fast it returns to target
         this.camInertia       = 0.5;                         // Sensitivity to movement
@@ -351,12 +356,18 @@ export class Camera6DOF
         // camera reference (by default js passes everything by reference)
         this.camera = camera;
 
-        // [1st] person view: (no position set just defaults to obj origin)
-        // this.origin.add(this.camera);
+        if(this.firstPerson)
+        {
+            // [1st] person view: (no position set just defaults to obj origin)
+            this.origin.add(this.camera);
+        } 
+        else 
+        {
+            // [3rd] person view:
+            this.origin.add(this.camera);
+            this.camera.position.copy(this.camWeldPoint); // Start at the weld point
+        }
 
-        // [3rd] person view:
-        this.origin.add(this.camera);
-        this.camera.position.copy(this.camWeldPoint); // Start at the weld point
 
     }
 
@@ -369,46 +380,64 @@ export class Camera6DOF
     {
         if (!this.camera) return;
 
-        // displacement variables for camera leaning effect
-        let lagX = -this.strafeThrust * 0.4 - this.yawVelocity * 1.5;
-        let lagY = -this.pitchVelocity * 1.5;
-        let lagZ = -this.thrust * 0.6;
-
-        // combine welded cam point + above lags into a "target" position
-        const targetPos = new THREE.Vector3(
-            this.camWeldPoint.x - lagX,
-            this.camWeldPoint.y - lagY,
-            this.camWeldPoint.z + lagZ
-        );
-
-        // lerp the current position towards targetPos
-        this.camera.position.lerp(targetPos, this.camLerpSpeed * this.dt);
-
-        // bounding sphere: clamp the camera within camRadius of the Weld Point
-        const offset = new THREE.Vector3().subVectors(this.camera.position, this.camWeldPoint);
-        if (offset.length() > this.camRadius) 
+        if (this.buttonX.pressed && !this.buttonXPrev)
         {
-            offset.setLength(this.camRadius);
-            this.camera.position.addVectors(this.camWeldPoint, offset);
+            this.firstPerson = !this.firstPerson;
+        }
+        this.buttonXPrev = this.buttonX.pressed;
+
+        if (this.shipModel)
+        {   
+            this.shipModel.visible = !this.firstPerson;
         }
 
-        // look slightly ahead or at the ship
-        // convert a local point in front of the ship to world space for the camera to look at
-        const lookTarget = new THREE.Vector3(0, 1, -35); 
-        this.origin.localToWorld(lookTarget); // <--- criticly important function to be used later
+        if (this.firstPerson)
+        {
+            // no camera bob implement yet for first person
+            this.camera.position.set(0, 0, 0); 
+        }
+        else
+        {
+            // displacement variables for camera leaning effect
+            let lagX = -this.strafeThrust * 0.4 - this.yawVelocity * 1.5;
+            let lagY = -this.pitchVelocity * 1.5;
+            let lagZ = -this.thrust * 0.6;
 
-        // to make the camera roll with the ship, we must tell it what "Up" is 
-        // in world space. Otherwise, .lookAt() defaults to world-up (0,1,0).
-        const worldUp = new THREE.Vector3(0, 1, 0);
-        worldUp.applyQuaternion(this.origin.quaternion);
-        this.camera.up.copy(worldUp);
+            // combine welded cam point + above lags into a "target" position
+            const targetPos = new THREE.Vector3(
+                this.camWeldPoint.x - lagX,
+                this.camWeldPoint.y - lagY,
+                this.camWeldPoint.z + lagZ
+            );
 
-        // i look at the correct target
-        this.camera.lookAt(lookTarget);
+            // lerp the current position towards targetPos
+            this.camera.position.lerp(targetPos, this.camLerpSpeed * this.dt);
 
-        // sinusoidal action on y
-        this.camera.position.y += Math.sin(this.timeElapsed * this.cameraFrequency) * this.cameraAmplitude;
+            // bounding sphere: clamp the camera within camRadius of the Weld Point
+            const offset = new THREE.Vector3().subVectors(this.camera.position, this.camWeldPoint);
+            if (offset.length() > this.camRadius) 
+            {
+                offset.setLength(this.camRadius);
+                this.camera.position.addVectors(this.camWeldPoint, offset);
+            }
 
+            // look slightly ahead or at the ship
+            // convert a local point in front of the ship to world space for the camera to look at
+            const lookTarget = new THREE.Vector3(0, 1, -35); 
+            this.origin.localToWorld(lookTarget); // <--- criticly important function to be used later
+
+            // to make the camera roll with the ship, we must tell it what "Up" is 
+            // in world space. Otherwise, .lookAt() defaults to world-up (0,1,0).
+            const worldUp = new THREE.Vector3(0, 1, 0);
+            worldUp.applyQuaternion(this.origin.quaternion);
+            this.camera.up.copy(worldUp);
+
+            // i look at the correct target
+            this.camera.lookAt(lookTarget);
+
+            // sinusoidal action on y
+            this.camera.position.y += Math.sin(this.timeElapsed * this.cameraFrequency) * this.cameraAmplitude;
+        }
     }
 
     /*******************
@@ -431,6 +460,8 @@ export class Camera6DOF
         // buttons
         this.leftBumper = gp.buttons[4];
         this.rghtBumper = gp.buttons[5];
+        this.buttonA    = gp.buttons[0]; // (A Button)
+        this.buttonX    = gp.buttons[2]; // (X Button)
 
     }
 
