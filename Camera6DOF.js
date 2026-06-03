@@ -172,7 +172,8 @@
             $ = MAJOR THRUSTER
         */
 
-import * as THREE from 'three';
+//import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
@@ -297,7 +298,7 @@ export class Camera6DOF
         this.buttonX    = { pressed: false, value: 0 };
 
         // inputs mouse and keyboard
-
+        // ....
 
         // vectors + flight control characteristics
         this.strafeVector    = new THREE.Vector3(1, 0, 0); // x

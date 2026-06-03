@@ -1,11 +1,22 @@
-// main.js
+//
+//
+//       *****************************************************************************
+//       **                                                                         **
+//       **     All glory to the Creator YHWH and his Son, our King, Jesus Christ   **
+//       **                                                                         **
+//       *****************************************************************************
+//
+//
+//
 
+// this file: "main.js"
 /*******************
 **                ** 
 ** INITILIZATIONS **
 **                **
 *******************/
-import * as THREE from 'three';
+//import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { Camera6DOF } from './Camera6DOF.js';
 const scene = new THREE.Scene();
@@ -16,7 +27,7 @@ let RENDER_HEIGHT = window.innerHeight;
 
 // camera
 const camera = new THREE.PerspectiveCamera( 50, RENDER_WIDTH / RENDER_HEIGHT, 0.1, 1000  );
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGPURenderer({ antialias: true });
 
 // opengl render buffer is fixed size + handle html dom margins
 renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT, false);
