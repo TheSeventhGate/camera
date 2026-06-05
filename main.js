@@ -19,11 +19,16 @@
 import * as THREE from 'three/webgpu';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { Camera6DOF } from './Camera6DOF.js';
+import Stats from 'three/addons/libs/stats.module.js'; // <-- no braces needed becuase its a default export
 const scene = new THREE.Scene();
 
 // window resolution
 let RENDER_WIDTH = window.innerWidth;
 let RENDER_HEIGHT = window.innerHeight;
+
+// statistics
+const stats = new Stats();
+document.body.appendChild(stats.dom);
 
 // camera
 const camera = new THREE.PerspectiveCamera( 50, RENDER_WIDTH / RENDER_HEIGHT, 0.1, 1000  );
@@ -246,6 +251,9 @@ function animate( time ) {
   // player
   player.update(gp, dt); // returns NULL
 
+  // stats
+  stats.update();
+
   // renderer
   renderer.render( scene, camera );
 
@@ -253,6 +261,13 @@ function animate( time ) {
 
 // main game loop call
 renderer.setAnimationLoop(animate);
+
+// Diagnostic: Confirm WebGPU is active
+renderer.init().then(() => {
+    const isWebGPU = renderer.isWebGPURenderer;
+    console.log("Is WebGPU Active:", isWebGPU);
+    console.log("Renderer Type:", renderer.constructor.name);
+});
 
 
 
