@@ -10,6 +10,9 @@
 //
 
 // this file: "main.js"
+
+
+
 /*******************
 **                ** 
 ** INITILIZATIONS **
@@ -66,29 +69,38 @@ window.addEventListener('resize', () => {
 });
 
 
+
 /*******************
 **                **
-** TIME           **
+** TIMING         **
 **                **
 *******************/
 let lastTime = 0;
 let deltaTime = 0;
+
+
 
 /*******************
 **                ** 
 ** GAMEPAD        **
 **                **
 *******************/
-function getGamepad() {
+function getGamepad() 
+{
   const gamepads = navigator.getGamepads();
   return gamepads[0];
 }
 
+
+
 /*******************
 **                ** 
-** SCENE OBJECTS  **
+** WORLD SPACE    **
+** WORLD GROUPS   **
 **                **
 *******************/
+const worldGroup = new THREE.Group();
+scene.add(worldGroup);
 
 // axis lines
 // scene
@@ -125,23 +137,25 @@ const groupMyLines = new THREE.Group();
 groupMyLines.add(lineX);
 groupMyLines.add(lineY);
 groupMyLines.add(lineZ);
-scene.add(groupMyLines);
+//scene.add(groupMyLines);
+worldGroup.add(groupMyLines);
+
 
 // shapes and wires
 // Object3D
 //  └── Mesh
 //       ├── Geometry
 //       └── Material
-const myCube = new THREE.BoxGeometry( 1, 1, 1 );
-const myCone = new THREE.ConeGeometry(1, 2, 13);
-const mySphere = new THREE.SphereGeometry(1,13,13);
-const material = new THREE.MeshBasicMaterial({ // A mesh is an object that takes a geometry, and applies a material to it
-      color: 0x00ff00, wireframe: true
-}); 
-const myObject = new THREE.Mesh(myCone, material); // The object that combines the shape and appearance and inherits transform behavior from Object3D
-// scene.add(myObject);
+// const myCube = new THREE.BoxGeometry( 1, 1, 1 );
+// const myCone = new THREE.ConeGeometry(1, 2, 13);
+// const mySphere = new THREE.SphereGeometry(1,13,13);
+// const material = new THREE.MeshBasicMaterial({ // A mesh is an object that takes a geometry, and applies a material to it
+//       color: 0x00ff00, wireframe: true
+// }); 
+// const myObject = new THREE.Mesh(myCone, material); // The object that combines the shape and appearance and inherits transform behavior from Object3D
+// // scene.add(myObject);
 
-// world
+// test surfaces and environmnet
 const testSurface = new THREE.PlaneGeometry(100,100);
 // const testSurfaceMat = new THREE.MeshStandardMaterial({ // requires a light source
 //       color: 0x808080,      // Gray as a hex value
@@ -150,62 +164,81 @@ const testSurface = new THREE.PlaneGeometry(100,100);
 //       metalness: 0.5
 // });
 const testSurfaceMat = new THREE.MeshBasicMaterial({
-      color: 0x808080,      // Gray as a hex value
+      color: 0x7a7272,      // Gray as a hex value
       side: THREE.DoubleSide,
 });
 const testSurfaceObj = new THREE.Mesh(testSurface, testSurfaceMat);
-// scene.add(testSurfaceObj);
+//scene.add(testSurfaceObj);
+worldGroup.add(testSurfaceObj);
+
 
 // move the floor down and rotate 90 degrees to be flat
 testSurfaceObj.position.y = -2;
 testSurfaceObj.rotation.x = -Math.PI / 2;
 
-// test grid
+// test grid matching floor position
 const theGrid = new THREE.GridHelper(100, 50, 0x40ecf0, 0x40ecf0);
-scene.add(theGrid);
+//scene.add(theGrid);
+worldGroup.add(theGrid);
 theGrid.position.y = -2;
 
-/*******************
-**                **
-** CAMERA         **
-**                **
-*******************/
+
+
+/*********************
+**                  **
+** PLAYER + CAMERA  **
+**                  **
+*********************/
 // slaved to 6dof obj --> ALL objects in javascript are passed by reference
 const player = new Camera6DOF(scene); // 6dof custom class
 player.mountCamera(camera);
 
 
+
 /*******************
 **                **
-** LIGHTS         **
+** LIGHTING       **
 **                **
 *******************/
-// Space lights / general lighting
-// const sunLight = new THREE.PointLight(0xffffff, 500.0); // Bright white light
-// sunLight.position.set(0, 200, 0); // Coming from above and to the side
-// scene.add(sunLight);
-// const sunGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-// const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Bright Yellow
-// const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-// sunMesh.position.copy(sunLight.position);
-// scene.add(sunMesh);
-
+// SCENE (The Global Container)
+// │
+// ├── worldGroup [MOVES ↔️] (The "Universe" container)
+// │   │   // Everything inside here slides in reverse to your inputs
+// │   ├── theGrid
+// │   ├── testSurfaceObj (The Floor)
+// │   ├── groupMyLines (Universe Center Markers)
+// │   └── [Planets / Stars / Stations] (Future objects)
+// │
+// ├── player.origin [ROTATES 🔄] (Fixed at 0, 0, 0)
+// │   │   // This is YOUR ship. It never leaves 0,0,0. It only spins.
+// │   ├── shipModel (The Mesh)
+// │   └── camera [FOLLOWS 🎥] (Rotates with the ship)
+// │
+// └── shipLights [STATIC 📍] (Fixed at 0, 0, 0 | No Rotation)
+//      │   // These live in the Scene. They stay at 0,0,0 but don't spin.
+//      ├── shipLight_01
+//      ├── shipLight_02
+//      └── shipLight_03
 // Ship specific lighting (eventually move this to ship obj Camera6DOF.js)
 // -10 z seems to be about right bove center fusalage
+
+// ship light 01
 const shipLight_01 = new THREE.DirectionalLight(0xffffff, 50.0); // debug red
 shipLight_01.position.set(0, 5, -3); // Coming from above and to the side
 scene.add(shipLight_01);
 
+// ship light 02
 const shipLight_02 = new THREE.DirectionalLight(0xffffff, 25.0); // debug green
 shipLight_02.position.set(5, 0, 5); // Coming from above and to the side
 scene.add(shipLight_02);
 
+// ship light 03
 const shipLight_03 = new THREE.DirectionalLight(0xffffff, 25.0); // debug blue
 shipLight_03.position.set(-5, 0, 5); // Coming from above and to the side
 scene.add(shipLight_03);
 
-// debug and visualize where the above lights are:
-const lightSphereGeo = new THREE.SphereGeometry(0.5, 8, 8);
+// mesh + mat debugs for lights:
+const lightSphereGeo    = new THREE.SphereGeometry(0.5, 8, 8);
 const lightSphereMat_01 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const lightSphereMat_02 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const lightSphereMat_03 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
@@ -213,19 +246,17 @@ const lightSphereMat_03 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 // visual for Ship Light 01
 const shipLight_01_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_01);
 shipLight_01_Mesh.position.copy(shipLight_01.position);
-scene.add(shipLight_01_Mesh);
+//scene.add(shipLight_01_Mesh);
 
 // visual for Ship Light 02
 const shipLight_02_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_02);
 shipLight_02_Mesh.position.copy(shipLight_02.position);
-scene.add(shipLight_02_Mesh);
+//scene.add(shipLight_02_Mesh);
 
 // visual for Ship Light 03
 const shipLight_03_Mesh = new THREE.Mesh(lightSphereGeo, lightSphereMat_03);
 shipLight_03_Mesh.position.copy(shipLight_03.position);
-scene.add(shipLight_03_Mesh);
-
-
+//scene.add(shipLight_03_Mesh);
 
 
 /*******************
@@ -233,7 +264,8 @@ scene.add(shipLight_03_Mesh);
 ** MAIN GAME LOOP **
 **                **
 *******************/
-function animate( time ) {
+function animate( time ) 
+{
 
   // timing... "time" is provided by THREE.js + Canvas's "requestAnimationFrame"
   // delta time iteration
@@ -254,6 +286,10 @@ function animate( time ) {
   // stats
   stats.update();
 
+  // here i am moving the world not the player
+  // .negate() turns (0, 0, 10) into (0, 0, -10)
+   worldGroup.position.copy(player.position).negate();
+
   // renderer
   renderer.render( scene, camera );
 
@@ -262,7 +298,7 @@ function animate( time ) {
 // main game loop call
 renderer.setAnimationLoop(animate);
 
-// Diagnostic: Confirm WebGPU is active
+// diagnostic: confirm WebGPU is active
 renderer.init().then(() => {
     const isWebGPU = renderer.isWebGPURenderer;
     console.log("Is WebGPU Active:", isWebGPU);

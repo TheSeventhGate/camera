@@ -636,8 +636,7 @@ export class Camera6DOF
         this.processInputs(gp);
         this.translate(); 
         this.rotate();
-        this.origin.position.copy(this.position);
-        this.origin.quaternion.copy(this.rotation);
+        this.origin.quaternion.copy(this.rotation); // <-- world space implementation
 
         // camera follows player
         this.updateCamera();
